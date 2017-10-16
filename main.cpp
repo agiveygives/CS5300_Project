@@ -11,8 +11,6 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
-#include <sstream>
-#include <boost/foreach.hpp>
 
 using namespace std;
 
@@ -118,19 +116,7 @@ bool parse_attributes() {
     getToken();
     bool valid = false;
     
-    valid = for_each(attributes.begin() , attributes.end(),
-                     [] (const string& attribute)
-                     {
-                         bool valid = false;
-                         
-                         if (token == attribute) {
-                             valid = true;
-                         } else if (token == attribute + ",") {
-                             valid = true;
-                         }
-                         
-                         return valid;
-                     });
+    forUntil(attributes);
     
     return valid;
 }
@@ -139,19 +125,7 @@ bool parse_tables() {
     getToken();
     bool valid = false;
     
-    valid = for_each(tables.begin() , tables.end(),
-                     [] (const string& table)
-                     {
-                         bool valid = false;
-                         
-                         if (token == table) {
-                             valid = true;
-                         } else if (token == table + ",") {
-                             valid = true;
-                         }
-                         
-                         return valid;
-                     });
+    forUntil(tables);
 
     
     return valid;
@@ -161,17 +135,15 @@ bool parse_comparison() {
     getToken();
     bool valid = false;
     
-    valid = for_each(attributes.begin() , attributes.end(),
-                     [] (const string& attribute)
-                     {
-                         bool valid = false;
-                         
-                         if (token == attribute) {
-                             valid = true;
-                         }
-                         
-                         return valid;
-                     });
+    int size = static_cast<int>(attributes.size());
+    
+    for (int i = 0; i < size; i++) {
+        if(token == attributes.at(i)) {
+            valid = true;
+            break;
+        }
+    }
+    
     if (valid) {
         getToken();
         
@@ -197,6 +169,20 @@ bool parse_nestedQuery() {
     bool valid = false;
 
     return valid;
+}
+
+void forUntil(vector<int> &checkVector) {
+    int size = static_cast<int>(checkVector.size());
+    
+    for (int i = 0; i < size; i++) {
+        if (token == checkVector.at(i)) {
+            valid = true;
+            break;
+        } else if (token == checkVector.at(i) + ",") {
+            valid = true;
+            break;
+        }
+    }
 }
 
 void quit(string error) {
