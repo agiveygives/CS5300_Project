@@ -175,10 +175,7 @@ void forUntil(vector<int> &checkVector) {
     int size = static_cast<int>(checkVector.size());
     
     for (int i = 0; i < size; i++) {
-        if (token == checkVector.at(i)) {
-            valid = true;
-            break;
-        } else if (token == checkVector.at(i) + ",") {
+        if (token == checkVector.at(i) || token == checkVector.at(i) + ",") {
             valid = true;
             break;
         }
