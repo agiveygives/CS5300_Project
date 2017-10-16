@@ -118,18 +118,19 @@ bool parse_attributes() {
     getToken();
     bool valid = false;
     
-    BOOST_FOREACH(string attribute, attributes)
-    {            
-        if (token == attribute) {
-            valid = true;
-            break;
-        } else if (token == attribute + ",") {
-            if (parse_attributes()) {
-                valid = true;
-                break;
-            }
-        }
-    }
+    valid = for_each(attributes.begin() , attributes.end(),
+                     [] (const string& attribute)
+                     {
+                         bool valid = false;
+                         
+                         if (token == attribute) {
+                             valid = true;
+                         } else if (token == attribute + ",") {
+                             valid = true;
+                         }
+                         
+                         return valid;
+                     });
     
     return valid;
 }
@@ -138,18 +139,19 @@ bool parse_tables() {
     getToken();
     bool valid = false;
     
-    BOOST_FOREACH(string table, tables)
-    {            
-        if (token == table) {
-            valid = true;
-            break;
-        } else if (token == table + ",") {
-            if (parse_tables()) {
-                valid = true;
-                break;
-            }
-        }
-    }
+    valid = for_each(tables.begin() , tables.end(),
+                     [] (const string& table)
+                     {
+                         bool valid = false;
+                         
+                         if (token == table) {
+                             valid = true;
+                         } else if (token == table + ",") {
+                             valid = true;
+                         }
+                         
+                         return valid;
+                     });
 
     
     return valid;
