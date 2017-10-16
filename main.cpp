@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <vector>
 #include <sstream>
+#include <boost/foreach.hpp>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ using namespace std;
 //global variables
 string token;
 string query;
+int state = 0;
 const string END = "END";
 const string QUERY_FILE = "query.txt";
 const int COMPARE_SIZE = 6;
@@ -90,36 +92,23 @@ void getToken() {
 bool parse_query() {
     bool valid = false;
     
-    if (token == "SELECT") {
-        if(parse_attributes()) {
-            getToken();
+    switch(state) {
+        case 0:
+            if (token == "SELECT")
+                if(parse_attributes())
+                    state = 1;
             
-            if (token == "FROM") {
-                if (parse_tables()) {
-                    getToken();
-                    
-                    if (token == "WHERE") {
-                        if(parse_comparison()) {
-                            valid = true;
-                        } else if (parse_query()) {
-                            
-                        } else {
-                            cout << "\n\nERR: Invalid WHERE clause\n\n";
-                        }
-                    } else {
-                        cout << "\n\nERR: missing WHERE statement\n\n";
-                    }
-                } else {
-                    cout << "\n\nERR: Invalid FROM clause\n\n";
-                }
-            } else {
-                cout << "\n\nERR: missing FROM statement\n\n";
-            }
-        } else {
-            cout << "\n\nERR: Invalid SELECT clause\n\n";
-        }
-    } else {
-        cout << "\n\nERR: missing SELECT statement\n\n";
+        case 1:
+            if (token == "FROM")
+                if (parse_tables())
+                    state = 2;
+            
+        case 2:
+            if (token == "WHERE")
+                if(parse_comparison())
+                   valid = true;
+                else if (parse_query())
+                    valid = true;
     }
     
     return valid;
@@ -129,20 +118,18 @@ bool parse_attributes() {
     getToken();
     bool valid = false;
     
-    valid = for_each(attributes.begin(), attributes.end(),
-             [] (const string& attribute)
-             {
-                 bool valid = false;
-                 
-                 if (token == attribute) {
-                     valid = true;
-                 } else if (token == attribute + ",") {
-                     if (parse_attributes())
-                         valid = true;
-                 }
-                 
-                 return valid;
-             });
+    BOOST_FOREACH(string attribute, attributes)
+    {            
+        if (token == attribute) {
+            valid = true;
+            break;
+        } else if (token == attribute + ",") {
+            if (parse_attributes()) {
+                valid = true;
+                break;
+            }
+        }
+    }
     
     return valid;
 }
@@ -151,20 +138,18 @@ bool parse_tables() {
     getToken();
     bool valid = false;
     
-    valid = for_each(tables.begin(), tables.end(),
-                     [] (const string& table)
-                     {
-                         bool valid = false;
-                         
-                         if (token == table) {
-                             valid = true;
-                         } else if (token == table + ",") {
-                             if (parse_tables())
-                                 valid = true;
-                         }
-                         
-                         return valid;
-                     });
+    BOOST_FOREACH(string table, tables)
+    {            
+        if (token == table) {
+            valid = true;
+            break;
+        } else if (token == table + ",") {
+            if (parse_tables()) {
+                valid = true;
+                break;
+            }
+        }
+    }
 
     
     return valid;
