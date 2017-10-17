@@ -89,28 +89,33 @@ void getToken() {
 bool parse_query() {
     bool valid = false;
     
-    switch(state) {
-        case 0:
-            if (token == "SELECT") {
-                getToken();
-                if(parse_attributes())
-                    state = 1;
-            }
-            
-        case 1:
-            if (token == "FROM") {
-                getToken();
-                if (parse_tables())
-                    state = 2;
-            }
-            
-        case 2:
-            if (token == "WHERE") {
-                getToken();
-                if(parse_comparison() || parse_query()) {
-                   valid = true;
-                } 
-            }
+    while (state != -1) {
+        switch(state) {
+            case 0:
+                if (token == "SELECT") {
+                    getToken();
+                    if(parse_attributes())
+                        state = 1;
+                }
+                break;
+                
+            case 1:
+                if (token == "FROM") {
+                    getToken();
+                    if (parse_tables())
+                        state = 2;
+                }
+                break;
+                
+            case 2:
+                if (token == "WHERE") {
+                    getToken();
+                    if(parse_comparison() || parse_query()) {
+                       valid = true;
+                    } 
+                }
+                break;
+        }
     }
     
     return valid;
