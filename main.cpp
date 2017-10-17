@@ -10,7 +10,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
-#include <vector>
+#include <array>
 
 using namespace std;
 
@@ -19,14 +19,13 @@ using namespace std;
 string token;
 string query;
 int state = 0;
+
 const string END = "END";
 const string QUERY_FILE = "query.txt";
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
 const string TABLES[] = {"Employee", "Department", "Works_on"};
-vector<string> tables (TABLES, TABLES + sizeof(TABLES) / sizeof(TABLES[0]) );
 const string ATTRIBUTES[] = {"Fname", "Minit", "Lname"};
-vector<string> attributes (ATTRIBUTES, ATTRIBUTES + sizeof(ATTRIBUTES) / sizeof(ATTRIBUTES[0]) );
 
 //// Function Prototypes: /////////////////////////////////////////
 
@@ -42,15 +41,15 @@ bool parse_query();
 bool parse_attributes();
 bool parse_tables();
 bool parse_comparison();
-bool parse_nestedQuery();
 
 //quit function
+bool forUntil(const string checkArr[]);
 void quit(string error);
 
 //// Main Method: ////////////////////////////////////////////
 
 
-int main(/*int argc, char* argv[]*/) {
+int main() {
     //readInFile();
     
     getToken();
@@ -92,53 +91,54 @@ bool parse_query() {
     
     switch(state) {
         case 0:
-            if (token == "SELECT")
+            if (token == "SELECT") {
+                getToken();
                 if(parse_attributes())
                     state = 1;
+            }
             
         case 1:
-            if (token == "FROM")
+            if (token == "FROM") {
+                getToken();
                 if (parse_tables())
                     state = 2;
+            }
             
         case 2:
-            if (token == "WHERE")
-                if(parse_comparison())
+            if (token == "WHERE") {
+                getToken();
+                if(parse_comparison() || parse_query()) {
                    valid = true;
-                else if (parse_query())
-                    valid = true;
+                } 
+            }
     }
     
     return valid;
 }
 
 bool parse_attributes() {
-    getToken();
     bool valid = false;
     
-    forUntil(attributes);
+    valid = forUntil(ATTRIBUTES);
     
     return valid;
 }
 
 bool parse_tables() {
-    getToken();
     bool valid = false;
     
-    forUntil(tables);
-
+    valid = forUntil(TABLES);
     
     return valid;
 }
 
 bool parse_comparison() {
-    getToken();
     bool valid = false;
     
-    int size = static_cast<int>(attributes.size());
+    int size = ATTRIBUTES->size();
     
     for (int i = 0; i < size; i++) {
-        if(token == attributes.at(i)) {
+        if(token == ATTRIBUTES[i]) {
             valid = true;
             break;
         }
@@ -165,21 +165,17 @@ bool parse_comparison() {
     return valid;
 }
 
-bool parse_nestedQuery() {
+bool forUntil(const string checkArr[]) {
     bool valid = false;
-
-    return valid;
-}
-
-void forUntil(vector<int> &checkVector) {
-    int size = static_cast<int>(checkVector.size());
+    int size = checkArr->size();
     
     for (int i = 0; i < size; i++) {
-        if (token == checkVector.at(i) || token == checkVector.at(i) + ",") {
+        if (token == checkArr[i] || token == checkArr[i] + ",") {
             valid = true;
             break;
         }
     }
+    return valid;
 }
 
 void quit(string error) {
