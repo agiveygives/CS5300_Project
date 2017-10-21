@@ -159,13 +159,13 @@ bool parse_query() {
 								if(token == "AS" || "EXISTS") {
 									getToken();
 
-									if(token == '(') { // check for opening parenthesis
-										getToken()
+									if(token == "(") { // check for opening parenthesis
+										getToken();
 
 										if(parse_query()) { // check for valid query
 											getToken();
 
-											if(token == ')') { // check for closing parenthesis
+											if(token == ")") { // check for closing parenthesis
 												whereState = 4;
 											} else
 												whereState = -1;
@@ -206,7 +206,7 @@ bool parse_query() {
 				break;
 			case 7:	// INTERSECT
 
-				break
+				break;
 			case 8:	// EXCEPT
 				break;
 		}
@@ -231,7 +231,7 @@ bool parse_attributes() {
 
 		// checks if a comma is the token after an attribute
 		// if so, parse_attributes is recalled on the next token
-		if(token == ',') {
+		if(token == ",") {
 			getToken();
 			valid = parse_attributes();
 		}
@@ -256,7 +256,7 @@ bool parse_tables() {
 
 		// checks if a comma is the token after an table
 		// if so, parse_tables is recalled on the next token
-		if(token == ',') {
+		if(token == ",") {
 			getToken();
 			valid = parse_tables();
 		}
