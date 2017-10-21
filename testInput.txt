@@ -1,0 +1,5 @@
+SELECT 	sname, age 
+FROM 	Sailors
+WHERE 	sid IN ( 	SELECT	sid
+					FROM	Reserves
+					WHERE	day = day ) 

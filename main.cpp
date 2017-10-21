@@ -16,14 +16,16 @@ using namespace std;
 
 
 //global variables
-string token;
+string token = "";
 string query;
-int state = 0;
 
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
 const string TABLES[] = {"Sailors", "Boats", "Reserves"};
-const string ATTRIBUTES[] = {"sid:integer", "sname:string", "rating:integer", "age:real", "bid:integer", "bname:string", "color:string", "sid:integer", "bid:integer", "day:date"};
+const int TABLES_SIZE = sizeof(TABLES)/sizeof(TABLES[0]);
+const string ATTRIBUTES[] = {"sid", "sname", "rating", "age", "bid", "bname", "color", "sid", "bid", "day"};
+const int ATTRIBUTES_SIZE = sizeof(ATTRIBUTES)/sizeof(ATTRIBUTES[0]);
+const string TYPES[] = {"integer", "string", "integer", "real", "integer", "string", "string", "integer", "integer", "date"};
 
 // struct schemaLL {
 // 	string m_tableName;
@@ -35,10 +37,6 @@ const string ATTRIBUTES[] = {"sid:integer", "sname:string", "rating:integer", "a
 
 //// Function Prototypes: /////////////////////////////////////////
 
-// function to read in Query input
-void readInFile();
-void readQuery();
-
 //function to use std input to set a value for token
 void getToken();
 
@@ -48,15 +46,13 @@ bool parse_attributes();
 bool parse_tables();
 
 //quit function
-bool forUntil(const string checkArr[]);
+bool forUntil(const string checkArr[], const int size);
 void quit(string error);
 
 //// Main Method: ////////////////////////////////////////////
 
 
 int main() {
-	//readInFile();
-	
 	getToken();
 	if(parse_query())
 		cout << "CORRECT" << endl;
@@ -70,33 +66,44 @@ int main() {
 
 void getToken() {
 	cin >> token;
+	//cout << "token: " << token << endl;
 	return;
 }
 
 bool parse_query() {
+	int state = 0;
 	bool valid = false;
 	short whereState = 0;
-	int size = 0;
 	
 	while (state != -1) {
 		switch(state) {
 			case 0:	// SELECT
+				//cout << "SELECT state\n";
 				if (token == "SELECT") {
 					getToken();
-					if(parse_attributes())
+					if(parse_attributes()) {
+						//cout << "Valid attributes\n";
 						state = 1;
-				}
+					}
+				} else
+					state = -1;
 				break;
 				
 			case 1:	// FROM
+				//cout << "FROM state\n";
+				getToken();
 				if (token == "FROM") {
 					getToken();
-					if (parse_tables())
+					if (parse_tables()) {
+						//cout << "valid tables\n";
 						state = 2;
-				}
+					}
+				} else
+					state = -1;
 				break;
 				
 			case 2:	// WHERE
+				//cout << "WHERE state\n";
 				if (token == "WHERE") {
 					getToken();
 
@@ -104,10 +111,11 @@ bool parse_query() {
 					while(whereState >= 0) {
 						switch(whereState) {
 							case 0:	// check for an attribute
-								size = ATTRIBUTES->size();
-	
-								for (int i = 0; i < size; i++) {
+								//cout << "whereState 0\n";
+									
+								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
 									if(token == ATTRIBUTES[i]) {
+										//cout << "Valid attribute\n";
 										whereState = 1;		// attribute found
 										break;
 									} else {
@@ -117,28 +125,32 @@ bool parse_query() {
 
 								break;
 							case 1:	// check for comparison operator
+								//cout << "whereState 1\n";
 								getToken();
 		
 								for (int i = 0; i < COMPARE_SIZE; i++) {
 									if (token == COMPARE[i]) {
-										state = 2; 	// There is a comparison operator present.
+										//cout << "Valid comparison\n";
+										whereState = 2; 	// There is a comparison operator present.
 										break;
-									} else
-										state = 3;	// Token is not a comparison operator. Check if AS, EXISTS, or NOT
+									} else {
+										whereState = 3;	// Token is not a comparison operator. Check if AS, EXISTS, or NOT
+									}
 								}
 
 								break;
 							case 2: // check for valid right side of comparison
+								//cout << "whereState 2\n";
 								getToken();
 
 								// token must be attribute, constant, or nested query w/ aggregate function.
 
 								// check for an attribute
-								size = ATTRIBUTES->size();
 	
-								for (int i = 0; i < size; i++) {
+								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
 									if(token == ATTRIBUTES[i]) {
 										whereState = 4;		// attribute found
+										valid = true;
 										break;
 									}
 								}
@@ -153,10 +165,11 @@ bool parse_query() {
 
 								break;
 							case 3: // check NOT, AS, and EXISTS
+								//cout << "whereState 3\n";
 								if(token == "NOT")
 									getToken();
 
-								if(token == "AS" || "EXISTS") {
+								if(token == "IN" || "EXISTS") {
 									getToken();
 
 									if(token == "(") { // check for opening parenthesis
@@ -173,10 +186,12 @@ bool parse_query() {
 											whereState = -1;
 									} else
 										whereState = -1;
-								}
+								} else
+									whereState = -1;
 
 								break;
 							case 4: // check for AND or OR
+								//cout << "whereState 4\n";
 								getToken();
 
 								if(token == "AND" || token == "OR"){
@@ -189,7 +204,11 @@ bool parse_query() {
 								break;
 						}
 					}
-				}
+					if(valid){
+						state = -1;
+					}
+				} else 
+					state = -1;
 				break;
 
 			case 3: // CONTAINS
@@ -222,19 +241,20 @@ bool parse_attributes() {
 	bool valid = false;
 	
 	// checks if there is a list of attributes
-	if(token[token.length() - 1] == ',' && forUntil(ATTRIBUTES)) {
+	if(token[token.length() - 1] == ',' && forUntil(ATTRIBUTES, ATTRIBUTES_SIZE)) {
+		getToken();
 		valid = parse_attributes();
 	} else { // if there isn't a list check if the attribute is in the schema
-		valid = forUntil(ATTRIBUTES);
+		valid = forUntil(ATTRIBUTES, ATTRIBUTES_SIZE);
 
-		getToken();
+		//getToken();
 
 		// checks if a comma is the token after an attribute
 		// if so, parse_attributes is recalled on the next token
-		if(token == ",") {
-			getToken();
-			valid = parse_attributes();
-		}
+		// if(token == ",") {
+		// 	getToken();
+		// 	valid = parse_attributes();
+		// }
 	}
 	
 	return valid;
@@ -247,10 +267,10 @@ bool parse_tables() {
 	bool valid = false;
 	
 	// checks if there is a list of tables
-	if(token[token.length() - 1] == ',' && forUntil(TABLES)) {
+	if(token[token.length() - 1] == ',' && forUntil(TABLES, TABLES_SIZE)) {
 		valid = parse_tables();
 	} else { // if there isn't a list check if the table is in the schema
-		valid = forUntil(TABLES);
+		valid = forUntil(TABLES, TABLES_SIZE);
 
 		getToken();
 
@@ -267,9 +287,8 @@ bool parse_tables() {
 	return valid;
 }
 
-bool forUntil(const string checkArr[]) {
+bool forUntil(const string checkArr[], const int size) {
 	bool valid = false;
-	int size = checkArr->size();
 	
 	for (int i = 0; i < size; i++) {
 		if (token == checkArr[i] || token == checkArr[i] + ",") {
