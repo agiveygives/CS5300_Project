@@ -74,11 +74,9 @@ bool parse_query() {
 	while (state != -1) {
 		switch(state) {
 			case 0:	// SELECT
-				//cout << "SELECT state\n";
 				if (token == "SELECT") {
 					getToken();
 					if(parse_attributes()) {
-						//cout << "Valid attributes\n";
 						state = 1;
 					}
 				} else
@@ -86,12 +84,10 @@ bool parse_query() {
 				break;
 				
 			case 1:	// FROM
-				//cout << "FROM state\n";
 				getToken();
 				if (token == "FROM") {
 					getToken();
 					if (parse_tables()) {
-						//cout << "valid tables\n";
 						state = 2;
 					}
 				} else
@@ -99,7 +95,6 @@ bool parse_query() {
 				break;
 				
 			case 2:	// WHERE
-				//cout << "WHERE state\n";
 				if (token == "WHERE") {
 					getToken();
 
@@ -107,11 +102,9 @@ bool parse_query() {
 					while(whereState >= 0) {
 						switch(whereState) {
 							case 0:	// check for an attribute
-								//cout << "whereState 0\n";
 									
 								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
 									if(token == ATTRIBUTES[i]) {
-										//cout << "Valid attribute\n";
 										whereState = 1;		// attribute found
 										break;
 									} else {
@@ -121,12 +114,10 @@ bool parse_query() {
 
 								break;
 							case 1:	// check for comparison operator
-								//cout << "whereState 1\n";
 								getToken();
 		
 								for (int i = 0; i < COMPARE_SIZE; i++) {
 									if (token == COMPARE[i]) {
-										//cout << "Valid comparison\n";
 										whereState = 2; 	// There is a comparison operator present.
 										break;
 									} else {
@@ -136,7 +127,6 @@ bool parse_query() {
 
 								break;
 							case 2: // check for valid right side of comparison
-								//cout << "whereState 2\n";
 								getToken();
 
 								// token must be attribute, constant, or nested query w/ aggregate function.
@@ -161,7 +151,6 @@ bool parse_query() {
 
 								break;
 							case 3: // check NOT, AS, and EXISTS
-								//cout << "whereState 3\n";
 								if(token == "NOT")
 									getToken();
 
@@ -187,7 +176,6 @@ bool parse_query() {
 
 								break;
 							case 4: // check for AND or OR
-								//cout << "whereState 4\n";
 								getToken();
 
 								if(token == "AND" || token == "OR"){
