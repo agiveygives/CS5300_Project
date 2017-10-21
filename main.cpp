@@ -21,13 +21,6 @@ string prevToken = token;
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
 
-// These will be eliminated when the LL is implimented in the rest of the program
-const string TABLES[] = {"Sailors", "Boats", "Reserves"};
-const int TABLES_SIZE = sizeof(TABLES)/sizeof(TABLES[0]);
-const string ATTRIBUTES[] = {"sid", "sname", "rating", "age", "bid", "bname", "color", "sid", "bid", "day"};
-const int ATTRIBUTES_SIZE = sizeof(ATTRIBUTES)/sizeof(ATTRIBUTES[0]);
-const string TYPES[] = {"integer", "string", "integer", "real", "integer", "string", "string", "integer", "integer", "date"};
-
 /*	Linked List data structure to store table name, attribute name, attribute type, and table renaming
  *	the pointer will point to the next attribute in the schema loaded from the input file before the queries
  */
@@ -51,6 +44,15 @@ class schemaLL {
 
 schemaLL schema = schemaLL();		// creates an empty schema
 
+enum dataType {
+	tableName,
+	alias,
+	attributeName,
+	attributeType
+};
+
+//dataType dataSearch;
+
 //// Function Prototypes: /////////////////////////////////////////
 
 void getSchema();
@@ -64,7 +66,7 @@ bool parse_attributes();
 bool parse_tables();
 
 //quit function
-bool forUntil(const string checkArr[], const int size);
+bool forUntil(const dataType data);
 void quit(string error);
 
 //// Main Method: ////////////////////////////////////////////
@@ -77,7 +79,7 @@ int main() {
 		if(parse_query())
 			cout << "CORRECT" << endl;
 		else {
-			cout << "INVALID" << endl;
+			//cout << "INVALID" << endl;
 		}
 	}
 
@@ -156,8 +158,11 @@ void getSchema() {
 			table->m_attributeType = wholeToken;
 
 			cout << "Table: " << table->m_tableName << endl
-				 	 << "Attribute: " << table->m_attributeName << endl
-				 	 << "Type: " << table->m_attributeType << endl << endl;
+				 << "Attribute: " << table->m_attributeName << endl
+				 << "Type: " << table->m_attributeType << endl << endl;
+
+			table->m_next = new schemaLL();
+			table = table->m_next;
 		}
 
 		getToken();
@@ -208,16 +213,18 @@ bool parse_query() {
 					// is a shit show in the state diagram
 					while(whereState >= 0) {
 						switch(whereState) {
+							schemaLL *runner;
 							case 0:	// check for an attribute
 								getToken();
 									
-								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
-									if(token == ATTRIBUTES[i]) {
-										whereState = 1;		// attribute found
+								runner = &schema;
+								while(runner != NULL) {
+									if (token == runner->m_attributeName) {
+										whereState = 1;
 										break;
-									} else {
-										whereState = -1;	// No attribute, invalid WHERE clause
-									}
+									} 
+									whereState = -1;
+									runner = runner->m_next;
 								}
 
 								break;
@@ -241,12 +248,15 @@ bool parse_query() {
 
 								// check for an attribute
 	
-								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
-									if(token == ATTRIBUTES[i]) {
-										whereState = 4;		// attribute found
+								runner = &schema;
+								while(runner != NULL) {
+									if (token == runner->m_attributeName) {
+										whereState = 4;
 										valid = true;
 										break;
 									}
+									whereState = -1;
+									runner = runner->m_next;
 								}
 
 								if(whereState == 4){
@@ -336,11 +346,11 @@ bool parse_attributes() {
 	bool valid = false;
 	
 	// checks if there is a list of attributes
-	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(ATTRIBUTES, ATTRIBUTES_SIZE)) {
+	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(attributeName)) {
 		getToken();
 		valid = parse_attributes();
 	} else { // if there isn't a list check if the attribute is in the schema
-		valid = forUntil(ATTRIBUTES, ATTRIBUTES_SIZE);
+		valid = forUntil(attributeName);
 
 		//getToken();
 
@@ -362,11 +372,11 @@ bool parse_tables() {
 	bool valid = false;
 	
 	// checks if there is a list of tables
-	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(TABLES, TABLES_SIZE)) {
+	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(tableName)) {
 		getToken();
 		valid = parse_tables();
 	} else { // if there isn't a list check if the table is in the schema
-		valid = forUntil(TABLES, TABLES_SIZE);
+		valid = forUntil(tableName);
 
 		getToken();
 
@@ -384,18 +394,52 @@ bool parse_tables() {
 	return valid;
 }
 
-/*	This will have to be redone to work with the linked list
- *	If I have time tomorrow (later today), I'll try to work on it.
+/*	pass it a value of the enumeration dataType
+ * 	the value you will determine which variable of the LL you run through
  */
-bool forUntil(const string checkArr[], const int size) {
+bool forUntil(const dataType data) {
+	schemaLL *runner = &schema;
 	bool valid = false;
 	
-	for (int i = 0; i < size; i++) {
-		if (token == checkArr[i] || token == checkArr[i] + ",") {
-			valid = true;
+	switch(data) {
+		case tableName:
+			while(runner != NULL) {
+				if (token == runner->m_tableName || token == runner->m_tableName + ",") {
+					valid = true;
+					break;
+				}
+				runner = runner->m_next;
+			}
 			break;
-		}
+		case alias:
+			while(runner != NULL) {
+				if (token == runner->m_alias || token == runner->m_alias + ",") {
+					valid = true;
+					break;
+				}
+				runner = runner->m_next;
+			}
+			break;
+		case attributeName:
+			while(runner != NULL) {
+				if (token == runner->m_attributeName || token == runner->m_attributeName + ",") {
+					valid = true;
+					break;
+				}
+				runner = runner->m_next;
+			}
+			break;
+		case attributeType:
+			while(runner != NULL) {
+				if (token == runner->m_attributeType) {
+					valid = true;
+					break;
+				}
+				runner = runner->m_next;
+			}
+			break;
 	}
+	
 	return valid;
 }
 
