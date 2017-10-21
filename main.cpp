@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,15 +25,29 @@ const string ATTRIBUTES[] = {"sid", "sname", "rating", "age", "bid", "bname", "c
 const int ATTRIBUTES_SIZE = sizeof(ATTRIBUTES)/sizeof(ATTRIBUTES[0]);
 const string TYPES[] = {"integer", "string", "integer", "real", "integer", "string", "string", "integer", "integer", "date"};
 
-// struct schemaLL {
-// 	string m_tableName;
-//	string alias;
-// 	string m_attributeName;
-// 	string m_sttributeType;
-// 	schemaLL *m_next = NULL;
-// };
+class schemaLL {
+
+	public:
+		string m_tableName;
+		string m_alias;
+		string m_attributeName;
+		string m_attributeType;
+		schemaLL *m_next;
+
+		schemaLL() {
+			m_tableName = "";
+			m_alias = "";
+			m_attributeName = "";
+			m_attributeType = "";
+			m_next = NULL;
+		}
+};
+
+schemaLL schema;
 
 //// Function Prototypes: /////////////////////////////////////////
+
+void getSchema();
 
 //function to use std input to set a value for token
 void getToken();
@@ -49,7 +65,7 @@ void quit(string error);
 
 
 int main() {
-	getToken();
+	getSchema();
 	if(parse_query())
 		cout << "CORRECT" << endl;
 	else
@@ -59,6 +75,75 @@ int main() {
 }
 
 //// Function Declarations: /////////////////////////////////
+
+void getSchema() {
+	schemaLL *table = &schema;
+	string wholeToken = "";
+	string currentTable = "";
+	int split = 0;
+
+	getToken();
+	while(token != "SELECT") {
+		currentTable = token;
+
+		getToken();
+		while(token[strlen(token.c_str()) - 1] != ')') {
+			table->m_tableName = currentTable;
+
+			if(token[0] == '(') {
+				token.erase(0, 1); 	// erase leading parenthesis
+			}
+
+			wholeToken = token;
+			for (int i = 0; i < strlen(token.c_str()); i++) {
+				if(token[i] == ':') {
+					split = i;	// element that includes the ':'
+				}
+			}
+
+			token.erase(split, strlen(token.c_str()));		// gets only the attribute name
+			table->m_attributeName = token;
+			
+			wholeToken.erase(0, split + 1);		// gets the attribute type
+			if (wholeToken[strlen(wholeToken.c_str()) - 1] == ',') {
+				wholeToken.erase(wholeToken.find(","), 1);
+			}
+			table->m_attributeType = wholeToken;
+
+			cout << "Table: " << currentTable << endl
+			 	 << "Attribute: " << token << endl
+			 	 << "Type: " << wholeToken << endl;
+
+			table->m_next = new schemaLL();
+			table = table->m_next;
+
+			getToken();
+		}
+
+		// process the last attribute
+		table->m_tableName = currentTable;
+		wholeToken = token;
+
+		for (int i = 0; i < strlen(token.c_str()); i++) {
+			if(token[i] == ':') {
+				split = i;	// element that includes the ':'
+			}
+		}
+
+		token.erase(split, token.find(")") + 1);		// gets only the attribute name
+		table->m_attributeName = token;
+		
+		wholeToken.erase(0, split + 1);		// gets the attribute type
+		wholeToken.erase(wholeToken.find(")"), 1);
+		table->m_attributeType = wholeToken;
+
+		cout << "Table: " << currentTable << endl
+			 	 << "Attribute: " << token << endl
+			 	 << "Type: " << wholeToken << endl;
+
+		getToken();
+	}
+}
 
 void getToken() {
 	cin >> token;
@@ -225,7 +310,7 @@ bool parse_attributes() {
 	bool valid = false;
 	
 	// checks if there is a list of attributes
-	if(token[token.length() - 1] == ',' && forUntil(ATTRIBUTES, ATTRIBUTES_SIZE)) {
+	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(ATTRIBUTES, ATTRIBUTES_SIZE)) {
 		getToken();
 		valid = parse_attributes();
 	} else { // if there isn't a list check if the attribute is in the schema
@@ -251,7 +336,7 @@ bool parse_tables() {
 	bool valid = false;
 	
 	// checks if there is a list of tables
-	if(token[token.length() - 1] == ',' && forUntil(TABLES, TABLES_SIZE)) {
+	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(TABLES, TABLES_SIZE)) {
 		valid = parse_tables();
 	} else { // if there isn't a list check if the table is in the schema
 		valid = forUntil(TABLES, TABLES_SIZE);
