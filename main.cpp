@@ -16,15 +16,21 @@ using namespace std;
 
 //global variables
 string token = "";
+string prevToken = token;
 
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
+
+// These will be eliminated when the LL is implimented in the rest of the program
 const string TABLES[] = {"Sailors", "Boats", "Reserves"};
 const int TABLES_SIZE = sizeof(TABLES)/sizeof(TABLES[0]);
 const string ATTRIBUTES[] = {"sid", "sname", "rating", "age", "bid", "bname", "color", "sid", "bid", "day"};
 const int ATTRIBUTES_SIZE = sizeof(ATTRIBUTES)/sizeof(ATTRIBUTES[0]);
 const string TYPES[] = {"integer", "string", "integer", "real", "integer", "string", "string", "integer", "integer", "date"};
 
+/*	Linked List data structure to store table name, attribute name, attribute type, and table renaming
+ *	the pointer will point to the next attribute in the schema loaded from the input file before the queries
+ */
 class schemaLL {
 
 	public:
@@ -43,7 +49,7 @@ class schemaLL {
 		}
 };
 
-schemaLL schema;
+schemaLL schema = schemaLL();		// creates an empty schema
 
 //// Function Prototypes: /////////////////////////////////////////
 
@@ -66,16 +72,24 @@ void quit(string error);
 
 int main() {
 	getSchema();
-	if(parse_query())
-		cout << "CORRECT" << endl;
-	else
-		cout << "INVALID" << endl;
-	
+
+	while (prevToken != token) {					// loop while previous token does not equal the current token.
+		if(parse_query())
+			cout << "CORRECT" << endl;
+		else {
+			cout << "INVALID" << endl;
+		}
+	}
+
 	return 0;
 }
 
 //// Function Declarations: /////////////////////////////////
 
+/*	This reads the schema and populates a linked list of attributes
+ *	Currently not being used in the rest of the program, but it works. So, yay.
+ *	Schema must be input with a space after the table name, and a space after each comma
+ */
 void getSchema() {
 	schemaLL *table = &schema;
 	string wholeToken = "";
@@ -83,10 +97,13 @@ void getSchema() {
 	int split = 0;
 
 	getToken();
-	while(token != "SELECT") {
+	while(token != "SELECT") { // loops until it reads the first token of the queries
 		currentTable = token;
 
 		getToken();
+		if(token == "(")
+			getToken();
+
 		while(token[strlen(token.c_str()) - 1] != ')') {
 			table->m_tableName = currentTable;
 
@@ -110,9 +127,9 @@ void getSchema() {
 			}
 			table->m_attributeType = wholeToken;
 
-			cout << "Table: " << currentTable << endl
-			 	 << "Attribute: " << token << endl
-			 	 << "Type: " << wholeToken << endl;
+			cout << "Table: " << table->m_tableName << endl
+			 	 << "Attribute: " << table->m_attributeName << endl
+			 	 << "Type: " << table->m_attributeType << endl << endl;
 
 			table->m_next = new schemaLL();
 			table = table->m_next;
@@ -120,32 +137,35 @@ void getSchema() {
 			getToken();
 		}
 
-		// process the last attribute
-		table->m_tableName = currentTable;
-		wholeToken = token;
+		if(token != ")") {
+			// process the last attribute
+			table->m_tableName = currentTable;
+			wholeToken = token;
 
-		for (int i = 0; i < strlen(token.c_str()); i++) {
-			if(token[i] == ':') {
-				split = i;	// element that includes the ':'
+			for (int i = 0; i < strlen(token.c_str()); i++) {
+				if(token[i] == ':') {
+					split = i;	// element that includes the ':'
+				}
 			}
+
+			token.erase(split, token.find(")") + 1);		// gets only the attribute name
+			table->m_attributeName = token;
+			
+			wholeToken.erase(0, split + 1);		// gets the attribute type
+			wholeToken.erase(wholeToken.find(")"), 1);
+			table->m_attributeType = wholeToken;
+
+			cout << "Table: " << table->m_tableName << endl
+				 	 << "Attribute: " << table->m_attributeName << endl
+				 	 << "Type: " << table->m_attributeType << endl << endl;
 		}
-
-		token.erase(split, token.find(")") + 1);		// gets only the attribute name
-		table->m_attributeName = token;
-		
-		wholeToken.erase(0, split + 1);		// gets the attribute type
-		wholeToken.erase(wholeToken.find(")"), 1);
-		table->m_attributeType = wholeToken;
-
-		cout << "Table: " << currentTable << endl
-			 	 << "Attribute: " << token << endl
-			 	 << "Type: " << wholeToken << endl;
 
 		getToken();
 	}
 }
 
 void getToken() {
+	prevToken = token;
 	cin >> token;
 	//cout << "token: " << token << endl;
 	return;
@@ -181,12 +201,15 @@ bool parse_query() {
 				
 			case 2:	// WHERE
 				if (token == "WHERE") {
-					getToken();
+					
 
 					// state machine for WHERE clause
+					// This could probably be put in it's own function, considering WHERE 
+					// is a shit show in the state diagram
 					while(whereState >= 0) {
 						switch(whereState) {
 							case 0:	// check for an attribute
+								getToken();
 									
 								for (int i = 0; i < ATTRIBUTES_SIZE; i++) {
 									if(token == ATTRIBUTES[i]) {
@@ -229,7 +252,7 @@ bool parse_query() {
 								if(whereState == 4){
 									break;
 								} else {
-									// check if token is a constant
+									// check if token is a constant of matching type
 
 									// check for query returning an aggregate function
 								}
@@ -246,7 +269,7 @@ bool parse_query() {
 										getToken();
 
 										if(parse_query()) { // check for valid query
-											getToken();
+											//getToken();
 
 											if(token == ")") { // check for closing parenthesis
 												whereState = 4;
@@ -274,7 +297,10 @@ bool parse_query() {
 						}
 					}
 					if(valid){
-						state = -1;
+						state = -1;		// this exits the while loop if the WHERE ends in a valid state
+										// it will have to be taken out in order to check for the rest
+										// couldn't think of a way to determine if the query is over since
+										//	his test data doesn't include semi colons and it's 4 am
 					}
 				} else 
 					state = -1;
@@ -337,6 +363,7 @@ bool parse_tables() {
 	
 	// checks if there is a list of tables
 	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(TABLES, TABLES_SIZE)) {
+		getToken();
 		valid = parse_tables();
 	} else { // if there isn't a list check if the table is in the schema
 		valid = forUntil(TABLES, TABLES_SIZE);
@@ -351,11 +378,15 @@ bool parse_tables() {
 		}
 	}
 
-	// add renaming using the "AS" keyword
+	// add renaming using the "AS" keyword 
+	// rename will be assigned to table->m_alias
 	
 	return valid;
 }
 
+/*	This will have to be redone to work with the linked list
+ *	If I have time tomorrow (later today), I'll try to work on it.
+ */
 bool forUntil(const string checkArr[], const int size) {
 	bool valid = false;
 	
@@ -370,5 +401,6 @@ bool forUntil(const string checkArr[], const int size) {
 
 void quit(string error) {
 	cout << error << endl;
-	exit(0);
+	exit(0);				// instead of exiting on an error, we should just display the error message and
+							// call getToken() until token == "SELECT"
 }
