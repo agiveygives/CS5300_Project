@@ -17,7 +17,6 @@ using namespace std;
 
 //global variables
 string token = "";
-string query;
 
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
