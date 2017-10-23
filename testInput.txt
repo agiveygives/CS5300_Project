@@ -2,12 +2,16 @@ Sailors	(sid:integer, sname:string, rating:integer, age:real)
 Boats (bid:integer, bname:string, color:string)
 Reserves (sid:integer, bid:integer, day:date) 
 
-SELECT 	sname, age 
+SELECT 	Sailors.sname, Sailors.age 
 FROM 	Sailors
-WHERE 	sid IN ( 	SELECT	sid
-					FROM	Reserves
-					WHERE	day = day ) 
+WHERE 	Sailors.sid IN ( 	SELECT	sid
+							FROM	Reserves
+							WHERE	day = day ) 
 
-SELECT	sname, bname, color
+SLECT 	sname
+FROM	Sailors
+WHERE	sid = sid
+
+SELECT	Sailors.sname, Boats.bname, Boats.color
 FROM	Sailors, Boats, Reserves
-WHERE	sid = sid AND bid = bid
+WHERE	Sailors.sid = Reserves.sid AND Boats.bid = Reserves.bid

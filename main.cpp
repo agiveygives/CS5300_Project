@@ -44,6 +44,22 @@ class schemaLL {
 
 schemaLL schema = schemaLL();		// creates an empty schema
 
+/*	This class will be used to store items to build our relational algebra expression
+ */
+class relationalAlgebra {
+
+	public:
+
+};
+
+/*	This class will be used to build and display our query tree
+ */
+class queryTree {
+
+	public:
+
+};
+
 enum dataType {
 	tableName,
 	alias,
@@ -64,9 +80,9 @@ void getToken();
 bool parse_query();
 bool parse_attributes();
 bool parse_tables();
+bool parse_schema(const dataType data);
 
 //quit function
-bool forUntil(const dataType data);
 void quit(string error);
 
 //// Main Method: ////////////////////////////////////////////
@@ -79,7 +95,7 @@ int main() {
 		if(parse_query())
 			cout << "CORRECT" << endl;
 		else {
-			//cout << "INVALID" << endl;
+			cout << "INVALID" << endl;
 		}
 	}
 
@@ -129,9 +145,9 @@ void getSchema() {
 			}
 			table->m_attributeType = wholeToken;
 
-			cout << "Table: " << table->m_tableName << endl
+			/*cout << "Table: " << table->m_tableName << endl
 			 	 << "Attribute: " << table->m_attributeName << endl
-			 	 << "Type: " << table->m_attributeType << endl << endl;
+			 	 << "Type: " << table->m_attributeType << endl << endl;*/
 
 			table->m_next = new schemaLL();
 			table = table->m_next;
@@ -157,9 +173,9 @@ void getSchema() {
 			wholeToken.erase(wholeToken.find(")"), 1);
 			table->m_attributeType = wholeToken;
 
-			cout << "Table: " << table->m_tableName << endl
+			/*cout << "Table: " << table->m_tableName << endl
 				 << "Attribute: " << table->m_attributeName << endl
-				 << "Type: " << table->m_attributeType << endl << endl;
+				 << "Type: " << table->m_attributeType << endl << endl;*/
 
 			table->m_next = new schemaLL();
 			table = table->m_next;
@@ -186,26 +202,27 @@ bool parse_query() {
 			case 0:	// SELECT
 				if (token == "SELECT") {
 					getToken();
-					if(parse_attributes()) {
+					if(parse_attributes()) {	// Save tokens for project relational algebra
 						state = 1;
 					}
 				} else
-					state = -1;
+					quit("ERR: Expected 'SELECT' but got " + token);
 				break;
 				
 			case 1:	// FROM
 				getToken();
-				if (token == "FROM") {
+				if (token == "FROM") {			// save tokens for relations in relational algebra/leaves in query tree
 					getToken();
 					if (parse_tables()) {
 						state = 2;
 					}
 				} else
-					state = -1;
+					quit("ERR: Expected 'FROM' but got " + token);
 				break;
 				
 			case 2:	// WHERE
-				if (token == "WHERE") {
+				if (token == "WHERE") {			// save inequalities for select relational algebra
+					//cout << "\n\nWHERE\n\n";
 					
 
 					// state machine for WHERE clause
@@ -218,13 +235,34 @@ bool parse_query() {
 								getToken();
 									
 								runner = &schema;
-								while(runner != NULL) {
-									if (token == runner->m_attributeName) {
-										whereState = 1;
-										break;
-									} 
-									whereState = -1;
-									runner = runner->m_next;
+								if(token.find(".") < strlen(token.c_str())) {		// check if attribute includes a '.'
+									schemaLL *runner = &schema;
+									string table = token;
+
+									table.erase(table.find("."), strlen(table.c_str()));	// get table associated with attribute
+									token.erase(0, token.find(".") + 1);					// get attribute
+
+									while(runner != NULL) {
+										if(table == runner->m_tableName) {
+											if(token == runner->m_attributeName) {
+												whereState = 1;
+												break;
+											} else {
+												whereState = -1;
+											}
+										} else
+											whereState = -1;
+										runner = runner->m_next;
+									}
+								} else {		// No table is specified
+									while(runner != NULL) {
+										if (token == runner->m_attributeName) {
+											whereState = 1;
+											break;
+										} 
+										whereState = -1;
+										runner = runner->m_next;
+									}
 								}
 
 								break;
@@ -249,14 +287,35 @@ bool parse_query() {
 								// check for an attribute
 	
 								runner = &schema;
-								while(runner != NULL) {
-									if (token == runner->m_attributeName) {
-										whereState = 4;
-										valid = true;
-										break;
+								if(token.find(".") < strlen(token.c_str())) {		// check if attribute includes a '.'
+									schemaLL *runner = &schema;
+									string table = token;
+
+									table.erase(table.find("."), strlen(table.c_str()));	// get table associated with attribute
+									token.erase(0, token.find(".") + 1);					// get attribute
+
+									runner = &schema;
+									while(runner != NULL) {
+										if(table == runner->m_tableName) {
+											if(token == runner->m_attributeName) {
+												whereState = 4;
+												break;
+											} else
+												whereState = -1;
+										} else {
+											whereState = -1;
+										}
+										runner = runner->m_next;
 									}
-									whereState = -1;
-									runner = runner->m_next;
+								} else {
+									while(runner != NULL) {
+										if (token == runner->m_attributeName) {
+											whereState = 4;
+											break;
+										} 
+										whereState = -1;
+										runner = runner->m_next;
+									}
 								}
 
 								if(whereState == 4){
@@ -343,25 +402,49 @@ bool parse_query() {
  * 	returns true if attribute or attribute list is valid
  */
 bool parse_attributes() {
+	string wholeToken = "";
 	bool valid = false;
 	
 	// checks if there is a list of attributes
-	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(attributeName)) {
-		getToken();
-		valid = parse_attributes();
-	} else { // if there isn't a list check if the attribute is in the schema
-		valid = forUntil(attributeName);
+	if(token.find(".") < strlen(token.c_str())) {		// check if attribute includes a '.'
+		schemaLL *runner = &schema;
+		string table = token;
 
-		//getToken();
+		table.erase(table.find("."), strlen(table.c_str()));	// get table associated with attribute
+		token.erase(0, token.find(".") + 1);					// get attribute
 
-		// checks if a comma is the token after an attribute
-		// if so, parse_attributes is recalled on the next token
-		// if(token == ",") {
-		// 	getToken();
-		// 	valid = parse_attributes();
-		// }
+		while(runner != NULL) {
+			if(table == runner->m_tableName) {
+				if(token == runner->m_attributeName) {
+					valid = true;
+					break;
+				}
+				if(token == runner->m_attributeName + ",") {
+					getToken();
+					valid = parse_attributes();
+					break;
+				}
+			}
+			runner = runner->m_next;
+		}
+	} else {
+		if(token[strlen(token.c_str()) - 1] == ',' && parse_schema(attributeName)) {
+			getToken();
+			valid = parse_attributes();
+		} else { // if there isn't a list check if the attribute is in the schema
+			valid = parse_schema(attributeName);
+
+			//getToken();
+
+			// checks if a comma is the token after an attribute
+			// if so, parse_attributes is recalled on the next token
+			// if(token == ",") {
+			// 	getToken();
+			// 	valid = parse_attributes();
+			// }
+		}
 	}
-	
+
 	return valid;
 }
 
@@ -372,11 +455,11 @@ bool parse_tables() {
 	bool valid = false;
 	
 	// checks if there is a list of tables
-	if(token[strlen(token.c_str()) - 1] == ',' && forUntil(tableName)) {
+	if(token[strlen(token.c_str()) - 1] == ',' && parse_schema(tableName)) {
 		getToken();
 		valid = parse_tables();
 	} else { // if there isn't a list check if the table is in the schema
-		valid = forUntil(tableName);
+		valid = parse_schema(tableName);
 
 		getToken();
 
@@ -397,7 +480,7 @@ bool parse_tables() {
 /*	pass it a value of the enumeration dataType
  * 	the value you will determine which variable of the LL you run through
  */
-bool forUntil(const dataType data) {
+bool parse_schema(const dataType data) {
 	schemaLL *runner = &schema;
 	bool valid = false;
 	
@@ -445,6 +528,10 @@ bool forUntil(const dataType data) {
 
 void quit(string error) {
 	cout << error << endl;
-	exit(0);				// instead of exiting on an error, we should just display the error message and
-							// call getToken() until token == "SELECT"
+	while(token != "SELECT") {
+		getToken();
+		if(prevToken == token) {
+			exit(0);
+		}
+	}				
 }
