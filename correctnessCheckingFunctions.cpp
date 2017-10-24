@@ -96,7 +96,7 @@ bool isAlias(){
   }
 }
 
-bool isTable(){
+bool isTable(){ //Need to change to not being hardcoded
   if (token=="Sailors"||token=="Boats"||token=="Reserves"){
     tableToken = token;
     return true;
@@ -105,7 +105,7 @@ bool isTable(){
     return false;
 }
 
-bool isAttribute(){
+bool isAttribute(){ //Need to change to not being hardcoded
   if(tableToken=="Sailors"){
     if(token=="sid"||token=="sname"||token=="rating"||token=="age")
       return true;
@@ -156,6 +156,8 @@ bool isString(){
           state=4;
       break;
       case 3:
+        if(tok[k])
+          state=4;
       break;
       default:
         return false;
@@ -351,11 +353,7 @@ bool isDate(){
   }
 }
 
-void checkAlias(){
-}
-
-
-void parse_UnaryOperator(){
+void checkAlias(){ //RETURN TO THIS LATER?
 }
 
 void parse_BinaryOperator(){
@@ -385,7 +383,12 @@ void parse_AggregateOperator(){
     quit("Error: Expecting AggregateOperator");
 }
 
-void parse_Comparison(){ //need?
+void parse_Comparison(){ 
+  if(token=="<"||token==">"||token=="="||token==">="||token=="<="||token=="<>"||
+     token=="!="||token=="!>"||token=="!<")
+    getToken();
+  else
+    quit("Error: Expecting Comparison");
 }
 
 void parse_AggregateFunction(){
@@ -406,7 +409,7 @@ void parse_AggregateFunction(){
   } else quit("Error: AggregateFunction: Expecting '('")
 }
 
-void parse_Member(){
+void parse_Member(){ //NEEDS CODE! IMPORTANT!
 }
 
 void parse_Expression(){ //needs review
@@ -502,26 +505,122 @@ void parse_InExpression(){
   else quit("Error: InExpression: Expecting Destination of IN");
 }
 
+
 void parse_SelectStatement(){
+  getToken();
+  if(token=="DISTINCT")
+    getToken();
+  parse_InnerSelect();
+  parse_FromStatement();
+  if(token=="WHERE")
+    parse_WhereStatement();
+  if(token=="GROUP"){
+    if(token=="BY")
+      parse_GroupByStatement()
+    else
+      quit("Error: SelectStatement: GROUP: expecting 'BY'");
+  }  
+  if(token=="HAVING")
+    parse_HavingStatement();
+  
+  while(token=="UNION" || token=="INTERSECT"){
+    getToken();
+    parse_SelectStatement();
+  }
+  
+  if(token=="ORDER"){
+    if(token=="BY")
+      parse_OrderByStatement();
+    else
+      quit("Error: SelectStatement: ORDER: expecting 'BY'");
+  }
 }
 
-void parse_InnerSelect(){
+void parse_InnerSelect(){ //NEEDS WORK
+  if(isTable()){ //!! table.*
+  } //NEEDS CODE
+  else if(token=="*")
+    getToken();
+  else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
+    AggregateFunction();
+  else {
+    parse_Expression();
+    if(token=="AS"){
+      getToken();
+      if(isAlias)
+        getToken();
+    }
+  }
+  if(/*THERE'S A COMMA*/){
+    parse_InnerSelect();
+  }
 }
 
 void parse_FromStatement(){
+  getToken();
+  parse_InnerFrom();
 }
 
 void parse_InnerFrom(){
+  if(isTable()){
+    getToken();
+    if(token=="AS"){
+      getToken();
+      if(isAlias())
+        getToken();
+    } else quit("Error: FromStatement: InnerFrom: AS: expecting alias");
+  }
+  else if(token=="("){
+    getToken();
+    if(token=="SELECT"){
+      parse_SelectStatement();
+      if(token=="AS"){
+        getToken();
+        if(isAlias())
+          getToken();
+      } else quit("Error: FromStatement: InnerFrom: AS: expecting alias");
+    }
+    else {
+      parse_InnerFrom();
+      while(/*THERE'S A COMMA*/){
+        getToken();
+        parse_InnerFrom();
+      }
+    }
+    if(token==")")
+      getToken();
+    else quit("Error: Expecting ')'");
+  }
 }
 
 void parse_WhereStatement(){
+  getToken();
+  parse_Expression();
 }
 
 void parse_GroupByStatement(){
+  getToken();
+  parse_Expression();
+  while (/*THERE'S A COMMA*/){
+    getToken();
+    parse_Expression();
+  }
 }
 
 void parse_HavingStatement(){
+  getToken();
+  if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
+    parse_AggregateFunction();
+  else
+    parse_Expression();
+  parse_Comparison();
+  if(isReal() || isString())
+    getToken();
+  else
+    quit("Error: Expecting real or string");
 }
 
 void parse_OrderByStatement(){
+  getToken();
+  parse_Expression();
 }
