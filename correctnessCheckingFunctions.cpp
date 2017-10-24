@@ -231,6 +231,124 @@ bool isReal(){
 }
 
 bool isDate(){
+  int i=0, k=0, tok_size, state=1;
+  char tok[50];
+  
+  strncpy(tok, token.c_str(), sizeof(tok)); //turn token (string) into chars, store in char array c[].
+  tok[sizeof(tok)-1] = 0;
+  tok_size = sizeof(tok);  
+  
+  while(k<tok_size){
+    switch(state){
+      case 0:
+        if(tok[k]=='\'')
+          state=1;
+        else
+          state=4;
+      break;
+      case 1:
+        if(tok[k]=='0')
+          state=2;
+        else if (tok[k]=='1')
+          state=3;
+        else if (tok[k]>'1' && tok[k]<='9')
+          state=5;
+        else
+          state=4;
+      break;
+      case 2:
+        if(tok[k]>='1' && tok[k]<='9')
+          state=5;
+        else
+          state=4;
+      break;
+      case 3:
+        if(tok[k]=='/')
+          state=6;
+        else if(tok[k]>='0' && tok[k]<='2')
+          state=5;
+        else
+          state=4;
+      break;
+      case 5:
+        if(tok[k]=='/')
+          state=6;
+        else
+          state=4;
+      break;
+      case 6:
+        if(tok[k]>='4' && tok[k]<='9')
+          state=10;
+        else if(tok[k]=='0')
+          state=7;
+        else if(tok[k]=='1' || tok[k]=='2')
+          state=8;
+        else if(tok[k]=='3')
+          state=9;
+        else
+          state=4;
+      break;
+      case 7:
+        if(tok[k]>='1' && tok[k]<='9')
+          state=10;
+        else
+          state=4;
+      break;
+      case 8:
+        if(tok[k]>='0' && tok[k]<='9')
+          state=10;
+        else if(tok[k]=='/')
+          state=11;
+        else
+          state=4;
+      break;
+      case 9:
+        if(tok[k]>='0' && tok[k]<='1')
+          state=10;
+        else if(tok[k]=='/')
+          state=11;
+        else
+          state=4;
+      break;
+      case 10:
+        if(tok[k]=='/')
+          state=11;
+        else
+          state=4;
+      break;
+      case 11:
+        if(tok[k]>='0' && tok[k]<='9')
+          state=12;
+        else
+          state=4;
+      break;
+      case 12:
+        if(tok[k]>='0' && tok[k]<='9')
+          state=13;
+        else
+          state=4;
+      break;
+      case 13:
+        if(tok[k]=='\'')
+          state=14;
+        else
+          state=4;
+      break;
+      case 14:
+        if(tok[k])
+          state=4;
+      break;
+      default:
+        return false;
+    }
+  }
+  if(k==tok_size){
+    if(state==14){
+      return true;
+    else
+      return false;
+    }
+  }
 }
 
 void checkAlias(){
