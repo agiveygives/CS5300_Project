@@ -53,7 +53,7 @@ bool parse_query();
 	void parse_HavingStatement();
 	void parse_OrderByStatement();
 
-	void quit() //need?
+	void quit(); //need?
 
 bool parse_attributes();
 bool parse_tables();

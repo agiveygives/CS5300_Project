@@ -67,7 +67,7 @@ bool isAlias(){
   tok[sizeof(tok)-1] = 0;
   tok_size = sizeof(tok);
   
-  if(!isKeyword(token)){
+  if(!isKeyword()){
     while(k<tok_size){ //for each character in tok
       switch(state){
         case 1:
@@ -77,7 +77,7 @@ bool isAlias(){
             state=2;
           break;
         case 3:
-          if((tok[k]>='a' && tok[k]<='z')||(tok[k]>='0' && tok[k]<='9')
+          if((tok[k]>='a' && tok[k]<='z')||(tok[k]>='0' && tok[k]<='9'))
             state=3;
           else
             state=2;
@@ -120,6 +120,7 @@ bool isTable(){ //Need to change to not being hardcoded
 
 bool isAttribute(){ //Need to change to not being hardcoded
   bool valid = false;
+  schemaLL *runner = &schema;
 
     while(runner != NULL) {
       if(tableToken == runner->m_tableName) {
@@ -191,11 +192,10 @@ bool isString(){
     }
   }
   if(k==tok_size){
-    if(state==3){
+    if(state==3)
       return true;
     else
       return false;
-    }
   }
 }
 
@@ -251,11 +251,10 @@ bool isReal(){
     }//switch
   }//while
   if(k==tok_size){
-    if(state==3||state==6){
+    if(state==3||state==6)
       return true;
     else
       return false;
-    }
   }//if
 }
 
@@ -372,11 +371,10 @@ bool isDate(){
     }
   }
   if(k==tok_size){
-    if(state==14){
+    if(state==14)
       return true;
     else
       return false;
-    }
   }
 }
 
@@ -432,8 +430,8 @@ void parse_AggregateFunction(){
       parse_Expression();
     if(token==")"){
       getToken();
-    } else quit("Error: AggregateFunction: Expecting ')'")
-  } else quit("Error: AggregateFunction: Expecting '('")
+    } else quit("Error: AggregateFunction: Expecting ')'");
+  } else quit("Error: AggregateFunction: Expecting '('");
 }
 
 void parse_Member(){ //NEEDS CODE! IMPORTANT!
@@ -543,7 +541,7 @@ void parse_SelectStatement(){
     parse_WhereStatement();
   if(token=="GROUP"){
     if(token=="BY")
-      parse_GroupByStatement()
+      parse_GroupByStatement();
     else
       quit("Error: SelectStatement: GROUP: expecting 'BY'");
   }  
@@ -566,7 +564,7 @@ void parse_SelectStatement(){
 void parse_InnerSelect(){ //NEEDS WORK
   bool isComma = false;
 
-  if(token[strlen(token,c_str())] == ',') {     // checks if there is a comma after the token
+  if(token[strlen(token.c_str())] == ',') {     // checks if there is a comma after the token
     token.erase(token.find("."), 1);            // erases the comma from the token so attributes can properly be found
     isComma = true;
   }
@@ -595,12 +593,12 @@ void parse_InnerSelect(){ //NEEDS WORK
   else if(token=="*")
     getToken();
   else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
-    AggregateFunction();
+    parse_AggregateFunction();
   else {
     parse_Expression();
     if(token=="AS"){
       getToken();
-      if(isAlias)
+      if(isAlias())
         getToken();
     }
   }
