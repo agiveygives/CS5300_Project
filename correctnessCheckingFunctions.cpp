@@ -359,28 +359,51 @@ void parse_UnaryOperator(){
 }
 
 void parse_BinaryOperator(){
+  if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%"){
+    getToken();
+  } else
+    quit("Error: Expecting BinaryOperator");
 }
 
-void parse_BitwiseOperator(){
+void parse_BitwiseOperator(){ //need?
 }
 
-void parse_LogicalOperator(){
+void parse_LogicalOperator(){ //need?
 }
 
 void parse_SetOperator(){
+  if(token=="UNION" || token=="INTERSECT")
+    getToken();
+  else
+    quit("Error: Expecting SetOperator");
 }
 
 void parse_AggregateOperator(){
+  if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
+    getToken();
+  else
+    quit("Error: Expecting AggregateOperator");
 }
 
-void parse_Comparison(){
-}
-
-
-void parse_AliasAssignment(){
+void parse_Comparison(){ //need?
 }
 
 void parse_AggregateFunction(){
+  parse_AggregateOperator();
+  if(token=="("){
+    getToken();
+    if(token=="ALL"){
+      getToken();
+      parse_Expression();
+    }
+    if(token=="*") //REVIEW this if statement
+      getToken();
+    else
+      parse_Expression();
+    if(token==")"){
+      getToken();
+    } else quit("Error: AggregateFunction: Expecting ')'")
+  } else quit("Error: AggregateFunction: Expecting '('")
 }
 
 void parse_Member(){
