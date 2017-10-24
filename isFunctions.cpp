@@ -127,7 +127,12 @@ bool isAttribute(){ //Need to change to not being hardcoded
   schemaLL *runner = &schema;
 
     while(runner != NULL) {
-      if(tableToken == runner->m_tableName) {
+      if(tableToken == "") {
+        if(token == runner->m_attributeName) {
+          valid = true;
+          break;
+        }
+      } else if(tableToken == runner->m_tableName) {
         if(token == runner->m_attributeName) {
           valid = true;
           break;

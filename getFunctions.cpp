@@ -93,6 +93,7 @@ void getToken() {
 
 
 void quit(string error) {
+	tableToken = "";		// reset tableToken variable;
 	cout << error << endl;
 	while(token != "SELECT") {
 		getToken();
