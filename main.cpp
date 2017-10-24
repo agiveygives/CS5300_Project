@@ -13,6 +13,7 @@
 //// Main Method: ////////////////////////////////////////////
 
 string token = "";
+string tableToken = token;
 string prevToken = token;
 schemaLL schema = schemaLL();
 

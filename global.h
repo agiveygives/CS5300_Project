@@ -4,6 +4,7 @@
 
 //global variables
 extern string token;
+extern string tableToken;
 extern string prevToken;
 
 const int COMPARE_SIZE = 6;
