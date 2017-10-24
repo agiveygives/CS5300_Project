@@ -409,23 +409,97 @@ void parse_AggregateFunction(){
 void parse_Member(){
 }
 
-
-void parse_Expression(){
+void parse_Expression(){ //needs review
+  if(isInteger() || isString())
+    getToken();
+  else if(/*Member cond*/) 
+    parse_Member();
+  else if(token=="("){
+    getToken();
+    parse_Expression();
+    while(token==","){
+      getToken();
+      parse_Expression();
+    }
+    if(token==")")
+      getToken();
+    else quit("Error: Expression: Expecting ')'");
+  }
+  else if(token=="NOT"){
+    getToken();
+    if(token=="EXISTS"){
+      getToken();
+      if(token=="("){
+        getToken();
+        parse_SelectStatement();
+        if(token==")")
+          getToken();
+        else
+          quit("Error: parse_Expression: expecting ')'");
+      }
+    }else 
+      parse_Expression();
+  }else{ //EXPRESSION BEFORE OTHER TOKEN(S)
+    parse_Expression();
+    if(token=="NOT"){
+      getToken();
+      if(token=="NULL") //NOT NULL
+        getToken();
+      else if(token=="LIKE") //NOT LIKE
+        parse_Expression();
+      else if(token=="IN"){ //NOT IN
+        parse_InExpression();
+      } 
+      else if(token=="BETWEEN")
+        parse_BetweenExpression();
+    } //END NOT
+    else if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%")
+      parse_BinaryExpression();
+    else if(token=="IS")
+      parse_IsExpression();
+    else if(token=="BETWEEN")
+      parse_BetweenExpression();
+    else if(token=="IN")
+      parse_InExpression();
+  }
 }
 
 void parse_BinaryExpression(){
-}
-
-void parse_NotLikeExpression(){
+  getToken();
+  parse_Expression();
 }
 
 void parse_IsExpression(){
+  getToken();
+  if(token=="NOT")
+    getToken();
+  parse_Expression();
 }
 
 void parse_BetweenExpression(){
+  getToken();
+  parse_Expression();
+  if(token=="AND"){
+    getToken();
+    parse_Expression();
+  } else quit("Error: BetweenExpression: Expecting 'AND'");
 }
 
 void parse_InExpression(){
+  getToken();
+  if(token=="("){
+    getToken();
+    if(token=="SELECT")
+      parse_SelectStatement();
+    else
+      parse_Expression();
+    if(token==")")
+      getToken();
+    else
+      quit("Error: InExpression: Expecting ')'");
+  } else if (isTable())
+    getToken();
+  else quit("Error: InExpression: Expecting Destination of IN");
 }
 
 void parse_SelectStatement(){
