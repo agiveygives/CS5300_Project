@@ -3,7 +3,6 @@
 #include "prototypes.h"
 
 
-
 bool isKeyword(){
   if(token=="SELECT"||token=="FROM"||token=="AS"||token=="WHERE"||token=="NOT"||
      token=="OR"||token=="AND"||token=="GROUP"||token=="BY"||token=="HAVING"||
@@ -136,14 +135,99 @@ bool isString(){
   
   while(k<tok_size){
     switch(state){
-      case 1:
-        if(tok[k]=='
+      case 0:
+        if(tok[k]=='\'')
+          state=1;
+        else
+          state=4;
       break;
+      case 1:
+        if((tok[k]>='A' && tok[k]<='Z') || (tok[k]>='a' && tok[k]<='z') || (tok[k]>='0' && tok[k]<='9'))
+          state=2;
+        else
+          state=4;
+      break;
+      case 2:
+        if((tok[k]>='A' && tok[k]<='Z') || (tok[k]>='a' && tok[k]<='z') || (tok[k]>='0' && tok[k]<='9'))
+          state=2;
+        else if (tok[k]=='\'')
+          state=3;
+        else
+          state=4;
+      break;
+      case 3:
+      break;
+      default:
+        return false;
+    }
+  }
+  if(k==tok_size){
+    if(state==3){
+      return true;
+    else
+      return false;
     }
   }
 }
 
 bool isReal(){
+  int i=0, k=0, tok_size, state=0;
+  char tok[50];
+  
+  strncpy(tok, token.c_str(), sizeof(tok));
+  tok[sizeof(tok)-1] = 0;
+  tok_size = sizeof(tok);
+  
+  if(isInteger())
+    return true;
+  
+  while(k<tok_size){
+    switch(state){
+      case 1:
+        if(tok[k]=='+' || tok[k]=='-')
+          state=2;
+        else if(tok[k]>='0' || tok[k]<='9')
+          state=3;
+        else
+          state=4;
+      break;
+      case 2:
+        if(tok[k]>='0' || tok[k]<='9')
+          state=3;
+        else
+          state=4;
+      break;
+      case 3:
+        if(tok[k]>='0' || tok[k]<='9')
+          state=3;
+        else if(tok[k]=='.')
+          state=5;
+        else
+          state=4;
+      break;
+      case 5:
+        if(tok[k]>='0' || tok[k]<='9')
+          state=6;
+        else 
+          state=4;
+      break;
+      case 6:
+        if(tok[k]>='0' || tok[k]<='9')
+          state=6;
+        else
+          state=4;
+      break;
+      default:        //if in state 4, failure
+        return false;
+    }//switch
+  }//while
+  if(k==tok_size){
+    if(state==3||state==6){
+      return true;
+    else
+      return false;
+    }
+  }//if
 }
 
 bool isDate(){
