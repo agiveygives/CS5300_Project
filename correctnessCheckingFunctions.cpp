@@ -97,16 +97,43 @@ bool isAlias(){
 }
 
 bool isTable(){ //Need to change to not being hardcoded
-  if (token=="Sailors"||token=="Boats"||token=="Reserves"){
+  bool valid = false;
+  schemaLL *runner = &schema;
+  
+  while(runner != NULL) {
+    if (token == runner->m_tableName) {
+      valid = true;
+      break;
+    }
+    runner = runner->m_next;
+  }
+  
+  return valid;
+
+  /*if (token=="Sailors"||token=="Boats"||token=="Reserves"){
     tableToken = token;
     return true;
   }
   else
-    return false;
+    return false;*/
 }
 
 bool isAttribute(){ //Need to change to not being hardcoded
-  if(tableToken=="Sailors"){
+  bool valid = false;
+
+    while(runner != NULL) {
+      if(tableToken == runner->m_tableName) {
+        if(token == runner->m_attributeName) {
+          valid = true;
+          break;
+        }
+      }
+      runner = runner->m_next;
+    }
+
+  return valid;
+
+  /*if(tableToken=="Sailors"){
     if(token=="sid"||token=="sname"||token=="rating"||token=="age")
       return true;
     else
@@ -122,7 +149,7 @@ bool isAttribute(){ //Need to change to not being hardcoded
     else
       return false;
   } else
-    return false;
+    return false;*/
 }
 
 bool isString(){
@@ -537,8 +564,34 @@ void parse_SelectStatement(){
 }
 
 void parse_InnerSelect(){ //NEEDS WORK
-  if(isTable()){ //!! table.*
-  } //NEEDS CODE
+  bool isComma = false;
+
+  if(token[strlen(token,c_str())] == ',') {     // checks if there is a comma after the token
+    token.erase(token.find("."), 1);            // erases the comma from the token so attributes can properly be found
+    isComma = true;
+  }
+
+  if(token.find(".") < strlen(token.c_str())) {   // check if attribute includes a '.' indicating that a table is specified
+    schemaLL *runner = &schema;
+    string table = token;
+
+    table.erase(table.find("."), strlen(table.c_str()));  // get table associated with attribute
+    token.erase(0, token.find(".") + 1);                  // get attribute
+
+    if(token != "*") {
+      string temp = token;
+      token = table;
+      if(isTable()){
+        token = temp;
+        if(isAttribute())
+          getToken();
+      }
+    } else {
+      token = table;
+      if(isTable())
+        getToken();
+    }
+  } 
   else if(token=="*")
     getToken();
   else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
@@ -551,7 +604,7 @@ void parse_InnerSelect(){ //NEEDS WORK
         getToken();
     }
   }
-  if(/*THERE'S A COMMA*/){
+  if(isComma){
     parse_InnerSelect();
   }
 }
