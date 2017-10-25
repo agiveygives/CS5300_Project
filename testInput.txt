@@ -45,6 +45,6 @@ WHERE 	S2.sid = R2.sid AND R2.bid = B2.bid AND B.2color = 'green' ;
 
 SELECT 	S.sname
 FROM 	Sailors AS S
-WHERE 	S.sid IN ( 	SELECT R.sid
- 					FROM 	Reserve AS R
- 					WHERE 	R.bid = 103 ) ;
+WHERE 	S.sid IN (SELECT R.sid
+ 					FROM 	Reserves AS R
+ 					WHERE 	R.bid = 103) ;

@@ -133,7 +133,7 @@ void parse_Expression(){ //needs review
     parse_IsExpression();
   else if(token=="BETWEEN")
     parse_BetweenExpression();
-  else if(token=="IN")
+  else if(token=="IN" || token=="EXISTS")
     parse_InExpression();
   else if(isComparison())
     parse_Expression();
@@ -166,16 +166,21 @@ void parse_BetweenExpression(){
 
 void parse_InExpression(){
   getToken();
-  if(token=="("){
-    getToken();
+  if(token[0]=='('){
+
+    if(strlen(token.c_str()) > 1)
+      token.erase(0,1);
+    else
+      getToken();
+
     if(token=="SELECT")
       parse_SelectStatement();
     else
       parse_Expression();
-    if(token==")")
+    if(token==")" || token[strlen(token.c_str())-1]==')')
       getToken();
     else
-      fail("Error: InExpression: Expecting ')'");
+      fail("Error: InExpression: Expecting ')' found " + token);
   } else if (isTable())
     getToken();
   else fail("Error: InExpression: Expecting Destination of IN");
