@@ -11,3 +11,7 @@ Please make note of the following:
 3. Each group is expected to submit in class a hard copy of the report along, with a print-out of the compiler. The compiler is expected to be well- documented. 
 4. SQL queries could be nested, consisting of set and relational operators, aggregate functions, IN, EXISTS, …. 
 5. Please note that randomly-selected groups may be asked to demo their project and execute it on input data
+
+Compile:  g++ *.cpp -o main 
+
+Run:      ./main < testInput.txt
