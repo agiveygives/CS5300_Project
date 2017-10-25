@@ -7,7 +7,9 @@
 extern string token;
 extern string tableToken;
 extern string prevToken;
+extern statement currentStatement;
 extern int queryNum;
+extern bool failure;
 extern locale loc;
 
 const int COMPARE_SIZE = 6;

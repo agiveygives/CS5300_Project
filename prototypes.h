@@ -54,13 +54,13 @@ void parse_OrderByStatement();
 
 bool parse_attributes();
 bool parse_tables();
-bool parse_schema(const dataType data);
 
 //fail functions
 void fail(string error);
 void success();
 void checkEnd();
 
+void buildRelationalAlgebra();
 void printRelationalAlgebra();
 void printQueryTree();
 

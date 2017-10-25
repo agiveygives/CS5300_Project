@@ -12,6 +12,7 @@ void parse_Query() {
   }
 
   if(token=="SELECT") {
+    currentStatement = SELECT;
     parse_SelectStatement();
     if(token==";"){
       success();
@@ -95,7 +96,6 @@ void parse_Member(){ //NEEDS CODE! IMPORTANT!
 }
 
 void parse_Expression(){ //needs review
-  select.push_back(token);
   int tokenLength = strlen(token.c_str());
 
   if(isInteger() || isString()){
@@ -130,7 +130,6 @@ void parse_Expression(){ //needs review
       parse_Expression();
   }
 
-  select.push_back(token);
   if(token=="NOT"){
     getToken();
     if(token=="NULL") //NOT NULL
@@ -216,14 +215,17 @@ void parse_SelectStatement(){
   if(token=="WHERE")
     parse_WhereStatement();
   if(token=="GROUP"){
+    currentStatement = NONE;
     getToken();
     if(token=="BY")
       parse_GroupByStatement();
     else
       fail("Error: SelectStatement: GROUP: expecting 'BY'");
   }  
-  if(token=="HAVING")
+  if(token=="HAVING"){
+    currentStatement = HAVING;
     parse_HavingStatement();
+  }
   
   while(token=="UNION" || token=="INTERSECT" || token == "EXCEPT" || token == "CONTAINS"){
     getToken();
@@ -255,7 +257,6 @@ void parse_InnerSelect(){ //NEEDS WORK
     isComma = true;
   }
 
-  project.push_back(token);
 
   if(isAttribute())                                       // SELECT attribute
     getToken();
@@ -310,6 +311,7 @@ void parse_InnerSelect(){ //NEEDS WORK
 
 void parse_FromStatement(){
   if(token=="FROM"){
+    currentStatement = FROM;
     getToken();
     parse_InnerFrom();
   } else fail("Error: expected FROM, but found " + token);
@@ -324,7 +326,6 @@ void parse_InnerFrom(){
   }
 
   if(isTable()){
-    cartesianProduct.push_back(token);
     tableToken = token;
     string aliasTable = token;
     getToken();
@@ -378,6 +379,7 @@ void parse_InnerFrom(){
 }
 
 void parse_WhereStatement(){
+  currentStatement = WHERE;
   getToken();
   parse_Expression();
 }

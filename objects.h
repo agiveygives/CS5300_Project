@@ -46,11 +46,14 @@ class queryTree {
 
 };
 
-enum dataType {
-	tableName,
-	alias,
-	attributeName,
-	attributeType
+enum statement {
+	NONE,
+	SELECT,
+	FROM,
+	WHERE,
+	HAVING,
+	UNION,
+	INTERSECT
 };
 
 #endif

@@ -16,7 +16,10 @@ string token = "";
 string tableToken = token;
 string prevToken = token;
 int queryNum = 1;
+bool failure = false;
+
 locale loc;
+statement currentStatement = NONE;
 
 schemaLL *schema = new schemaLL();
 vector<string> potentialAlias;

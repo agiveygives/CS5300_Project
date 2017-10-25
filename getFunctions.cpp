@@ -87,6 +87,10 @@ void getSchema() {
 void getToken() {
   prevToken = token;
   cin >> token;
+
+  if(!failure)
+    buildRelationalAlgebra();
+  
   for (int i = 0; i < token.length(); i++)
     token[i] = toupper(token[i],loc);
   //cout << "token: " << token << endl;
@@ -112,6 +116,7 @@ void setAlias(string aliasTable){
 
 // When a query is found invalid, print an error message and getToken until the next query
 void fail(string error) {
+  failure = true;
   tableToken = "";    // reset tableToken variable;
   potentialAlias.clear();
   cout << "\nQuery " << queryNum << " failed\n";
@@ -132,6 +137,7 @@ void fail(string error) {
     getToken();
     checkEnd();
   }
+  failure = false;
   parse_Query();      
 }
 
@@ -176,14 +182,87 @@ void checkEnd() {
   }
 }
 
+void buildRelationalAlgebra(){
+  bool start = true;
+  bool open = true;
+
+  if(token == "SELECT"){
+    start = false;
+    currentStatement = SELECT;
+  }
+  else if(token == "FROM"){
+    start = false;
+    currentStatement = FROM;
+  }
+  else if(token == "WHERE"){
+    start = false;
+    currentStatement = WHERE;
+  }
+  else if(token == "GROUP"){
+    start = false;
+    currentStatement = NONE;
+  }
+  else if(token == "UNION"){
+    start = false;
+    currentStatement = UNION;
+  }
+  else if(token == "INTERSECT"){
+    start = false;
+    currentStatement = INTERSECT;
+  }
+
+  if(start && token != ";"){
+    switch(currentStatement){
+      case NONE:
+        break;
+      case SELECT:
+        for(int i = 0; i < project.size(); i++){
+          if(project[i] == token){
+            open = false;
+            break;
+          }
+        }
+        if(open)
+          project.push_back(token);
+        break;
+
+      case FROM:
+        for(int i = 0; i < cartesianProduct.size(); i++){
+          if(cartesianProduct[i] == token){
+            open = false;
+            break;
+          }
+        }
+        if(open){
+          string lower = token;
+          for (int i = 0; i < token.length(); i++)
+            token[i] = toupper(token[i],loc);
+          if(isTable())
+            cartesianProduct.push_back(lower);
+        }
+        break;
+
+      case WHERE:
+        select.push_back(token);
+        break;
+      case HAVING:
+        break;
+      case UNION:
+        break;
+      case INTERSECT:
+        break;
+    }
+  }
+}
+
 void printRelationalAlgebra(){
-  /*int i = 0;
+  int i = 0;
 
   cout << "(PROJECT(";
   for(i = 0; i < project.size(); i++){
     cout << project[i];
     if(i+1 < project.size())
-      cout << ", ";
+      cout << " ";
   }
   cout << ")";
 
@@ -204,7 +283,7 @@ void printRelationalAlgebra(){
       cout << ")";
   }
 
-  cout << "))\n";*/
+  cout << "))\n";
 }
 
 void printQueryTree(){
