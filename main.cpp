@@ -15,16 +15,24 @@
 string token = "";
 string tableToken = token;
 string prevToken = token;
-schemaLL schema = schemaLL();
+schemaLL *schema = new schemaLL();
+vector<string> potentialAlias;
+vector<string> select;
+vector<string> project;
+vector<string> cartesianProduct;
 
 int main() {
 	getSchema();
 
-	while (prevToken != token) {					// loop while previous token does not equal the current token.
-		if(parse_query())
-			cout << "CORRECT" << endl;
-		else {
-			cout << "INVALID" << endl;
+	while(prevToken != token)
+		parse_Query();
+
+	if(schema != NULL){
+		schemaLL *del;
+		while(schema != NULL){
+			del = schema;
+			schema = schema->m_next;
+			delete del;
 		}
 	}
 

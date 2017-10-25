@@ -27,18 +27,6 @@ class schemaLL {
 			m_attributeType = "";
 			m_next = NULL;
 		}
-
-		~schemaLL() {
-			schemaLL *first = this;
-			schemaLL *temp = first->m_next;
-
-			while (first != NULL)
-			{
-			    temp = first->m_next;
-			    delete first;
-			    first = temp;
-			}
-		}
 };
 
 /*	This class will be used to store items to build our relational algebra expression

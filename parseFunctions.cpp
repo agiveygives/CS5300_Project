@@ -2,14 +2,20 @@
 #include "global.h"
 #include "prototypes.h"
 
-void checkAlias(){ //RETURN TO THIS LATER?
+void parse_Query() {
+  if(token=="SELECT") {
+    parse_SelectStatement();
+    if(token==";"){
+      success();
+    }
+  } else fail("Error: Expected SELECT, but found " + token);
 }
 
 void parse_BinaryOperator(){
   if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%"){
     getToken();
   } else
-    quit("Error: Expecting BinaryOperator");
+    fail("Error: Expecting BinaryOperator");
 }
 
 void parse_BitwiseOperator(){ //need?
@@ -22,22 +28,14 @@ void parse_SetOperator(){
   if(token=="UNION" || token=="INTERSECT")
     getToken();
   else
-    quit("Error: Expecting SetOperator");
+    fail("Error: Expecting SetOperator");
 }
 
 void parse_AggregateOperator(){
   if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
     getToken();
   else
-    quit("Error: Expecting AggregateOperator");
-}
-
-void parse_Comparison(){ 
-  if(token=="<"||token==">"||token=="="||token==">="||token=="<="||token=="<>"||
-     token=="!="||token=="!>"||token=="!<")
-    getToken();
-  else
-    quit("Error: Expecting Comparison");
+    fail("Error: Expecting AggregateOperator");
 }
 
 void parse_AggregateFunction(){
@@ -54,12 +52,14 @@ void parse_AggregateFunction(){
       parse_Expression();
     if(token==")"){
       getToken();
-    } else quit("Error: AggregateFunction: Expecting ')'");
-  } else quit("Error: AggregateFunction: Expecting '('");
+    } else if(token=="),"){
+      token.erase(0,1);
+    } else fail("Error: AggregateFunction: Expecting ')'");
+  } else fail("Error: AggregateFunction: Expecting '('");
 }
 
 void parse_Member(){ //NEEDS CODE! IMPORTANT!
-  schemaLL *runner = &schema;
+  schemaLL *runner = schema;
   string temp = "";
   tableToken = token;
 
@@ -68,20 +68,26 @@ void parse_Member(){ //NEEDS CODE! IMPORTANT!
 
   temp = token;
   token = tableToken;
-  if(isTable() || isAlias()) {
+  if(isTable() || isAlias() || checkAlias()) {
     token = temp;
     if(isAttribute()){
       tableToken = "";
+      getToken();
       return;
-    } else quit("Error: " + token + " is not an attribute of relation " + tableToken);
-  } else quit("Error: " + token + " is not a relation in the schema");
+    } else fail("Error: parse_Member: " + token + " is not an attribute of relation " + tableToken);
+  } else fail("Error: parse_Member: " + token + " is not a relation in the schema");
 }
 
 void parse_Expression(){ //needs review
-  if(isInteger() || isString())
+  if(isInteger() || isString()){
     getToken();
-  else if(token.find(".") < strlen(token.c_str())) // member
+  }
+  else if(token.find(".") < strlen(token.c_str())){ // member
     parse_Member();
+  } 
+  else if(isAttribute()){
+    getToken();
+  } 
   else if(token=="("){
     getToken();
     parse_Expression();
@@ -91,7 +97,7 @@ void parse_Expression(){ //needs review
     }
     if(token==")")
       getToken();
-    else quit("Error: Expression: Expecting ')'");
+    else fail("Error: Expression: Expecting ')'");
   }
   else if(token=="NOT"){
     getToken();
@@ -103,32 +109,37 @@ void parse_Expression(){ //needs review
         if(token==")")
           getToken();
         else
-          quit("Error: parse_Expression: expecting ')'");
+          fail("Error: parse_Expression: expecting ')'");
       }
     }else 
       parse_Expression();
-  }else{ //EXPRESSION BEFORE OTHER TOKEN(S)
-    parse_Expression();
-    if(token=="NOT"){
+  }
+
+  if(token=="NOT"){
+    getToken();
+    if(token=="NULL") //NOT NULL
       getToken();
-      if(token=="NULL") //NOT NULL
-        getToken();
-      else if(token=="LIKE") //NOT LIKE
-        parse_Expression();
-      else if(token=="IN"){ //NOT IN
-        parse_InExpression();
-      } 
-      else if(token=="BETWEEN")
-        parse_BetweenExpression();
-    } //END NOT
-    else if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%")
-      parse_BinaryExpression();
-    else if(token=="IS")
-      parse_IsExpression();
+    else if(token=="LIKE") //NOT LIKE
+      parse_Expression();
+    else if(token=="IN"){ //NOT IN
+      parse_InExpression();
+    } 
     else if(token=="BETWEEN")
       parse_BetweenExpression();
-    else if(token=="IN")
-      parse_InExpression();
+  } //END NOT
+  else if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%")
+    parse_BinaryExpression();
+  else if(token=="IS")
+    parse_IsExpression();
+  else if(token=="BETWEEN")
+    parse_BetweenExpression();
+  else if(token=="IN")
+    parse_InExpression();
+  else if(isComparison())
+    parse_Expression();
+  else if(token=="AND" || token=="OR"){
+    getToken();
+    parse_Expression();
   }
 }
 
@@ -150,7 +161,7 @@ void parse_BetweenExpression(){
   if(token=="AND"){
     getToken();
     parse_Expression();
-  } else quit("Error: BetweenExpression: Expecting 'AND'");
+  } else fail("Error: BetweenExpression: Expecting 'AND'");
 }
 
 void parse_InExpression(){
@@ -164,10 +175,10 @@ void parse_InExpression(){
     if(token==")")
       getToken();
     else
-      quit("Error: InExpression: Expecting ')'");
+      fail("Error: InExpression: Expecting ')'");
   } else if (isTable())
     getToken();
-  else quit("Error: InExpression: Expecting Destination of IN");
+  else fail("Error: InExpression: Expecting Destination of IN");
 }
 
 
@@ -183,12 +194,12 @@ void parse_SelectStatement(){
     if(token=="BY")
       parse_GroupByStatement();
     else
-      quit("Error: SelectStatement: GROUP: expecting 'BY'");
+      fail("Error: SelectStatement: GROUP: expecting 'BY'");
   }  
   if(token=="HAVING")
     parse_HavingStatement();
   
-  while(token=="UNION" || token=="INTERSECT"){
+  while(token=="UNION" || token=="INTERSECT" || token == "EXCEPT"){
     getToken();
     parse_SelectStatement();
   }
@@ -197,43 +208,41 @@ void parse_SelectStatement(){
     if(token=="BY")
       parse_OrderByStatement();
     else
-      quit("Error: SelectStatement: ORDER: expecting 'BY'");
+      fail("Error: SelectStatement: ORDER: expecting 'BY'");
   }
 }
 
 void parse_InnerSelect(){ //NEEDS WORK
   bool isComma = false;
 
-  if(token[strlen(token.c_str())] == ',') {     // checks if there is a comma after the token
-    token.erase(token.find("."), 1);            // erases the comma from the token so attributes can properly be found
+  if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
+    token.erase(token.find(","), 1);            // erases the comma from the token so attributes can properly be found
     isComma = true;
   }
 
-  if(token.find(".") < strlen(token.c_str())) {   // check if attribute includes a '.' indicating that a table is specified
-    schemaLL *runner = &schema;
-    string table = token;
-
-    table.erase(table.find("."), strlen(table.c_str()));  // get table associated with attribute
-    token.erase(0, token.find(".") + 1);                  // get attribute
-
-    if(token != "*") {
-      string temp = token;
-      token = table;
-      if(isTable()){
-        token = temp;
-        if(isAttribute())
-          getToken();
-      }
-    } else {
-      token = table;
+  if(isAttribute())                                       // SELECT attribute
+    getToken();
+  else if(token.find(".") < strlen(token.c_str())){       // SELECT table.[attribute|*]
+    if(token[strlen(token.c_str())] == '*'){              // SELECT table.*
+      token.erase(token.find("."), 2);
       if(isTable())
         getToken();
-    }
-  } 
-  else if(token=="*")
+      else {
+        bool open = true;
+        if(!checkAlias())
+            for(int i = 0 ; i < potentialAlias.size(); i++)
+              if(potentialAlias[i] == token)
+                open = false;
+            if(open)
+              potentialAlias.push_back(token);
+      }
+    } else parse_Member();                                // SELECT table.attribute
+  } else if(token=="*")                                   // SELECT *
     getToken();
-  else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
+  else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM"){
     parse_AggregateFunction();
+    // Check AS
+  }
   else {
     parse_Expression();
     if(token=="AS"){
@@ -242,24 +251,46 @@ void parse_InnerSelect(){ //NEEDS WORK
         getToken();
     }
   }
+
   if(isComma){
+    parse_InnerSelect();
+  } else if(token == ",") {
+    getToken();
     parse_InnerSelect();
   }
 }
 
 void parse_FromStatement(){
-  getToken();
-  parse_InnerFrom();
+  if(token=="FROM"){
+    getToken();
+    parse_InnerFrom();
+  } else fail("Error: expected FROM, but found " + token);
 }
 
 void parse_InnerFrom(){
+  bool isComma = false;
+
+  if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
+    token.erase(token.find(","), 1);              // erases the comma from the token so table can properly be found
+    isComma = true;
+  }
+
   if(isTable()){
+    tableToken = token;
+    string aliasTable = token;
     getToken();
     if(token=="AS"){
       getToken();
-      if(isAlias())
+      if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
+        token.erase(token.find(","), 1);
+        isComma = true;
+      }
+      if(isAlias()){
+        setAlias(aliasTable);
         getToken();
-    } else quit("Error: FromStatement: InnerFrom: AS: expecting alias");
+      }
+      else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
+    }
   }
   else if(token=="("){
     getToken();
@@ -267,20 +298,28 @@ void parse_InnerFrom(){
       parse_SelectStatement();
       if(token=="AS"){
         getToken();
-        if(isAlias())
+        if(isAlias()){
           getToken();
-      } else quit("Error: FromStatement: InnerFrom: AS: expecting alias");
+        }
+      } else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
     }
     else {
       parse_InnerFrom();
-      while(token[strlen(token.c_str())] == ','){
+      while(token[strlen(token.c_str())-1] == ','){
         getToken();
         parse_InnerFrom();
       }
     }
     if(token==")")
       getToken();
-    else quit("Error: Expecting ')'");
+    else fail("Error: Expecting ')'");
+  } else if(!isTable()) fail("Error: InnerFrom: " + token + " is not a valid relation");
+
+  if(isComma){
+    parse_InnerFrom();
+  } else if(token == ",") {
+    getToken();
+    parse_InnerFrom();
   }
 }
 
@@ -292,7 +331,7 @@ void parse_WhereStatement(){
 void parse_GroupByStatement(){
   getToken();
   parse_Expression();
-  while (token[strlen(token.c_str())] == ','){
+  while (token[strlen(token.c_str())-1] == ','){
     getToken();
     parse_Expression();
   }
@@ -304,11 +343,13 @@ void parse_HavingStatement(){
     parse_AggregateFunction();
   else
     parse_Expression();
-  parse_Comparison();
-  if(isReal() || isString())
-    getToken();
+  if(isComparison())
+    if(isReal() || isString())
+      getToken();
+    else
+      fail("Error: Expecting real or string");
   else
-    quit("Error: Expecting real or string");
+    fail("Error: HavingStatement: Expecting comparison operator");
 }
 
 void parse_OrderByStatement(){

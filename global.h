@@ -1,6 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 #include "objects.h"
+#include <vector>
 
 //global variables
 extern string token;
@@ -10,6 +11,10 @@ extern string prevToken;
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};
 
-extern schemaLL schema;		// creates an empty schema
+extern schemaLL *schema;		// creates an empty schema
+extern vector<string> potentialAlias;
+extern vector<string> select;
+extern vector<string> project;
+extern vector<string> cartesianProduct;
 
 #endif
