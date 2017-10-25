@@ -7,6 +7,8 @@
 extern string token;
 extern string tableToken;
 extern string prevToken;
+extern int queryNum;
+extern locale loc;
 
 const int COMPARE_SIZE = 6;
 const string COMPARE[COMPARE_SIZE] = {"=", ">", ">=", "<", "<=", "<>"};

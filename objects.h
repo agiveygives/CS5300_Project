@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <locale>
 
 using namespace std;
 

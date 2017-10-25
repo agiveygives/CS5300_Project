@@ -83,13 +83,17 @@ void getSchema() {
   }
 }
 
+// Reads in the next token and converts all the characters to uppercase
 void getToken() {
   prevToken = token;
   cin >> token;
+  for (int i = 0; i < token.length(); i++)
+    token[i] = toupper(token[i],loc);
   //cout << "token: " << token << endl;
   return;
 }
 
+// sets the alias of a specified table
 void setAlias(string aliasTable){
   schemaLL *runner = schema;
 
@@ -106,10 +110,17 @@ void setAlias(string aliasTable){
   }
 }
 
+// When a query is found invalid, print an error message and getToken until the next query
 void fail(string error) {
   tableToken = "";    // reset tableToken variable;
   potentialAlias.clear();
-  cout << error << endl;
+  cout << "\nQuery " << queryNum << " failed\n";
+  cout << "\t" << error << endl;
+
+  select.clear();
+  project.clear();
+  cartesianProduct.clear();
+  queryNum++;
 
   //go to the end of the query
   while(token != ";"){
@@ -124,16 +135,20 @@ void fail(string error) {
   parse_Query();      
 }
 
+// When a query is valid, print the relational algebra and query tree
 void success() {
   tableToken = "";
+
+  // if any aliases went undeclared
   if(potentialAlias.size() > 0){
     for(int i = 0; i < potentialAlias.size(); i++){
       cout << "Error: " << potentialAlias[i] << " not declared\n";
     }
     fail("");
   }
-  cout << "SUCCESS!\n";
-  
+  cout << "\nQuery " << queryNum << " was successful\n";
+  queryNum++;
+
   printRelationalAlgebra();
   printQueryTree();
   select.clear();
@@ -146,8 +161,9 @@ void success() {
   parse_Query();
 }
 
+// check for the end of file
 void checkEnd() {
-  if(prevToken == token) {
+  if(prevToken == token) {      // fix because ') )' causes this to return true
     if(schema != NULL){
       schemaLL *del;
       while(schema != NULL){
@@ -168,18 +184,16 @@ void printRelationalAlgebra(){
     cout << project[i];
     if(i+1 < project.size())
       cout << ", ";
-    else
-      cout << ")";
   }
+  cout << ")";
 
   cout << "(SELECT(";
   for(i = 0; i < select.size(); i++){
     cout << select[i];
     if(i+1 < select.size())
-      cout << ", ";
-    else
-      cout << ")";
+      cout << " ";
   }
+  cout << ")";
 
   cout << "(";
   for(i = 0; i < cartesianProduct.size(); i++){

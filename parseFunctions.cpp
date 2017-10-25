@@ -48,7 +48,15 @@ void parse_AggregateOperator(){
 
 void parse_AggregateFunction(){
   parse_AggregateOperator();
-  if(token=="("){
+  if(token[0]=='(' && token[strlen(token.c_str())-1] == ')'){
+    token.erase(0,1);
+    token.erase(strlen(token.c_str())-1, 1);
+    if(token == "*")
+      getToken();
+    else
+      parse_Expression();
+  }
+  else if(token=="("){
     getToken();
     if(token=="ALL"){
       getToken();
@@ -87,10 +95,13 @@ void parse_Member(){ //NEEDS CODE! IMPORTANT!
 }
 
 void parse_Expression(){ //needs review
+  select.push_back(token);
+  int tokenLength = strlen(token.c_str());
+
   if(isInteger() || isString()){
     getToken();
   }
-  else if(token.find(".") < strlen(token.c_str())){ // member
+  else if(token.find(".") < tokenLength){ // member
     parse_Member();
   } 
   else if(isAttribute()){
@@ -99,10 +110,6 @@ void parse_Expression(){ //needs review
   else if(token=="("){
     getToken();
     parse_Expression();
-    while(token==","){
-      getToken();
-      parse_Expression();
-    }
     if(token==")")
       getToken();
     else fail("Error: Expression: Expecting ')'");
@@ -123,6 +130,7 @@ void parse_Expression(){ //needs review
       parse_Expression();
   }
 
+  select.push_back(token);
   if(token=="NOT"){
     getToken();
     if(token=="NULL") //NOT NULL
@@ -141,8 +149,10 @@ void parse_Expression(){ //needs review
     parse_IsExpression();
   else if(token=="BETWEEN")
     parse_BetweenExpression();
-  else if(token=="IN" || token=="EXISTS")
+  else if(token=="IN" || token=="EXISTS"){
+    getToken();
     parse_InExpression();
+  }
   else if(isComparison())
     parse_Expression();
   else if(token=="AND" || token=="OR"){
@@ -173,13 +183,15 @@ void parse_BetweenExpression(){
 }
 
 void parse_InExpression(){
-  getToken();
   if(token[0]=='('){
 
     if(strlen(token.c_str()) > 1)
       token.erase(0,1);
     else
       getToken();
+
+    if(token[0]=='(')
+      parse_InExpression();
 
     if(token=="SELECT")
       parse_SelectStatement();
@@ -213,9 +225,18 @@ void parse_SelectStatement(){
   if(token=="HAVING")
     parse_HavingStatement();
   
-  while(token=="UNION" || token=="INTERSECT" || token == "EXCEPT"){
+  while(token=="UNION" || token=="INTERSECT" || token == "EXCEPT" || token == "CONTAINS"){
     getToken();
-    parse_SelectStatement();
+    if(token[0] == '('){
+      if(strlen(token.c_str()) > 1)
+        token.erase(0,1);
+      else
+        getToken();
+    }
+    if(token == "SELECT"){
+      parse_SelectStatement();
+    } 
+    else fail("Error: Expecting SELECT bu found " + token);
   }
   
   if(token=="ORDER"){
@@ -234,6 +255,8 @@ void parse_InnerSelect(){ //NEEDS WORK
     isComma = true;
   }
 
+  project.push_back(token);
+
   if(isAttribute())                                       // SELECT attribute
     getToken();
   else if(token.find(".") < strlen(token.c_str())){       // SELECT table.[attribute|*]
@@ -250,7 +273,9 @@ void parse_InnerSelect(){ //NEEDS WORK
             if(open)
               potentialAlias.push_back(token);
       }
-    } else parse_Member();                                // SELECT table.attribute
+    } else {
+      parse_Member();                                // SELECT table.attribute
+    }
   } else if(token=="*")                                   // SELECT *
     getToken();
   else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM"){
@@ -299,6 +324,7 @@ void parse_InnerFrom(){
   }
 
   if(isTable()){
+    cartesianProduct.push_back(token);
     tableToken = token;
     string aliasTable = token;
     getToken();
@@ -367,10 +393,12 @@ void parse_GroupByStatement(){
 
 void parse_HavingStatement(){
   getToken();
+
   if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
     parse_AggregateFunction();
   else
-    parse_Expression();
+    parse_Member();
+
   if(isComparison())
     if(isReal() || isString())
       getToken();
