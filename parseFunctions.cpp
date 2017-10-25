@@ -3,12 +3,20 @@
 #include "prototypes.h"
 
 void parse_Query() {
+  if(token[0]=='('){
+    if(strlen(token.c_str()) > 1){
+        token.erase(0,1);
+    } else {
+      getToken();
+    }
+  }
+
   if(token=="SELECT") {
     parse_SelectStatement();
     if(token==";"){
       success();
     }
-  } else fail("Error: Expected SELECT, but found " + token);
+  } else fail("Error: Expected SELECT but found " + token);
 }
 
 void parse_BinaryOperator(){
@@ -196,6 +204,7 @@ void parse_SelectStatement(){
   if(token=="WHERE")
     parse_WhereStatement();
   if(token=="GROUP"){
+    getToken();
     if(token=="BY")
       parse_GroupByStatement();
     else
@@ -246,7 +255,16 @@ void parse_InnerSelect(){ //NEEDS WORK
     getToken();
   else if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM"){
     parse_AggregateFunction();
-    // Check AS
+    if(token == "AS"){
+      getToken();
+      if(isAlias()){
+        for(int i = 0; i < potentialAlias.size(); i++)
+          if(potentialAlias[i] == token){
+            potentialAlias.erase(potentialAlias.begin()+i);
+          }
+        getToken();
+      }
+    }
   }
   else {
     parse_Expression();
@@ -297,8 +315,13 @@ void parse_InnerFrom(){
       else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
     }
   }
-  else if(token=="("){
-    getToken();
+  else if(token[0]=='('){
+
+    if(strlen(token.c_str()) > 1)
+      token.erase(0,1);
+    else
+      getToken();
+
     if(token=="SELECT"){
       parse_SelectStatement();
       if(token=="AS"){
