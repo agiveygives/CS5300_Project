@@ -89,7 +89,7 @@ void getToken() {
   cin >> token;
 
   if(!failure)
-    buildRelationalAlgebra();
+    getRelationalAlgebra();
   
   for (int i = 0; i < token.length(); i++)
     token[i] = toupper(token[i],loc);
@@ -125,6 +125,7 @@ void fail(string error) {
   select.clear();
   project.clear();
   cartesianProduct.clear();
+  relationalAlgebra = "";
   queryNum++;
 
   //go to the end of the query
@@ -155,11 +156,13 @@ void success() {
   cout << "\nQuery " << queryNum << " was successful\n";
   queryNum++;
 
-  printRelationalAlgebra();
+  buildRelationalAlgebra();
+  cout << relationalAlgebra << endl;
   printQueryTree();
   select.clear();
   project.clear();
   cartesianProduct.clear();
+  relationalAlgebra = "";
 
   getToken();
   checkEnd();
@@ -182,7 +185,7 @@ void checkEnd() {
   }
 }
 
-void buildRelationalAlgebra(){
+void getRelationalAlgebra(){
   bool start = true;
   bool open = true;
 
@@ -204,10 +207,24 @@ void buildRelationalAlgebra(){
   }
   else if(token == "UNION"){
     start = false;
+
+    buildRelationalAlgebra();
+    select.clear();
+    project.clear();
+    cartesianProduct.clear();
+    relationalAlgebra += "UNION";
+
     currentStatement = UNION;
   }
   else if(token == "INTERSECT"){
     start = false;
+
+    buildRelationalAlgebra();
+    select.clear();
+    project.clear();
+    cartesianProduct.clear();
+    relationalAlgebra += "INTERSECT";
+
     currentStatement = INTERSECT;
   }
 
@@ -255,35 +272,35 @@ void buildRelationalAlgebra(){
   }
 }
 
-void printRelationalAlgebra(){
+void buildRelationalAlgebra(){
   int i = 0;
 
-  cout << "(PROJECT(";
+  relationalAlgebra +=  "(PROJECT(";
   for(i = 0; i < project.size(); i++){
-    cout << project[i];
+    relationalAlgebra +=  project[i];
     if(i+1 < project.size())
-      cout << " ";
+      relationalAlgebra +=  " ";
   }
-  cout << ")";
+  relationalAlgebra +=  ")";
 
-  cout << "(SELECT(";
+  relationalAlgebra +=  "(SELECT(";
   for(i = 0; i < select.size(); i++){
-    cout << select[i];
+    relationalAlgebra +=  select[i];
     if(i+1 < select.size())
-      cout << " ";
+      relationalAlgebra +=  " ";
   }
-  cout << ")";
+  relationalAlgebra +=  ")";
 
-  cout << "(";
+  relationalAlgebra +=  "(";
   for(i = 0; i < cartesianProduct.size(); i++){
-    cout << cartesianProduct[i];
+    relationalAlgebra +=  cartesianProduct[i];
     if(i+1 < cartesianProduct.size())
-      cout << " x ";
+      relationalAlgebra +=  " x ";
     else
-      cout << ")";
+      relationalAlgebra +=  ")";
   }
 
-  cout << "))\n";
+  relationalAlgebra +=  "))";
 }
 
 void printQueryTree(){

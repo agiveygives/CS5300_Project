@@ -15,6 +15,7 @@
 string token = "";
 string tableToken = token;
 string prevToken = token;
+string relationalAlgebra = "";
 int queryNum = 1;
 bool failure = false;
 

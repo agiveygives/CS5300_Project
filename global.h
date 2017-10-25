@@ -7,6 +7,8 @@
 extern string token;
 extern string tableToken;
 extern string prevToken;
+extern string relationalAlgebra;
+
 extern statement currentStatement;
 extern int queryNum;
 extern bool failure;

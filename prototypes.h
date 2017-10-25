@@ -61,7 +61,7 @@ void success();
 void checkEnd();
 
 void buildRelationalAlgebra();
-void printRelationalAlgebra();
+void getRelationalAlgebra();
 void printQueryTree();
 
 #endif
