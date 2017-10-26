@@ -3,8 +3,8 @@
  *  File: parseFunctions.cpp
  *  Includes:
  *    parseQuery()                  parse_Expression()          parse_InnerSelect()        parse_OrderByStatement()   
- *    parse_BinaryOperator()        parse_binaryExpression()    parse_FromStatement()
- *    parse_SetOperator()           parse_isExpression()        parse_InnerFrom()
+ *                                  parse_binaryExpression()    parse_FromStatement()
+ *                                  parse_isExpression()        parse_InnerFrom()
  *    parse_AggregateOperator()     parse_betweenExpression()   parse_WhereStatement()
  *    parse_AggregateFunction()     parse_inExpression()        parse_GroupByStatement()
  *    parse_Member()                parse_SelectStatement()     parse_HavingStatement()
@@ -16,6 +16,10 @@
 #include "global.h"
 #include "prototypes.h"
 
+/*  begins parsing the query by checking for any parenthesis, then checking for token == "SELECT"
+ *  if SELECT is found, parse_SelectStatement() is called
+ *  When select statement returns, if the token == ";" then the query was completed
+ */
 void parse_Query() {
   if(token[0]=='('){
     if(strlen(token.c_str()) > 1){
@@ -34,20 +38,10 @@ void parse_Query() {
   } else fail("Error: Expected SELECT but found " + token);
 }
 
-void parse_BinaryOperator(){
-  if(token=="+" || token=="-" || token=="*" || token=="/" || token=="%"){
-    getToken();
-  } else
-    fail("Error: Expecting BinaryOperator");
-}
-
-void parse_SetOperator(){
-  if(token=="UNION" || token=="INTERSECT")
-    getToken();
-  else
-    fail("Error: Expecting SetOperator");
-}
-
+/*  calls getToken and returns if token is an aggregate operator
+ *    "AVG" || "COUNT" || "MAX" || "MIN" || "SUM"
+ *  calls fail function if false
+ */
 void parse_AggregateOperator(){
   if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
     getToken();
@@ -55,6 +49,8 @@ void parse_AggregateOperator(){
     fail("Error: Expecting AggregateOperator");
 }
 
+/*  checks for valid aggregate function consisting of "aggregateOperator ([ALL] Expression | *) 
+ */
 void parse_AggregateFunction(){
   parse_AggregateOperator();
   if(token[0]=='(' && token[strlen(token.c_str())-1] == ')'){
@@ -83,6 +79,8 @@ void parse_AggregateFunction(){
   } else fail("Error: AggregateFunction: Expecting '('");
 }
 
+/*  checks if the attribute is an attribute of specified table/alias
+ */
 void parse_Member(){
   schemaLL *runner = schema;
   string temp = "";
@@ -103,6 +101,12 @@ void parse_Member(){
   } else fail("Error: parse_Member: " + token + " is not a relation in the schema");
 }
 
+/*  checks for an expression of the form:
+ *    Expression :=   [integer|string|real|date] | Member | [NOT] Expression | 
+ *            BinaryExpression | (Expression {, Expression}) | 
+ *              NotLikeExpression | Expression NOT NULL | IsExpression | 
+ *            BetweenExpression | InExpression | [NOT][EXISTS](SelectStatement)
+ */
 void parse_Expression(){
   int tokenLength = strlen(token.c_str());
 
@@ -176,11 +180,17 @@ void parse_Expression(){
   }
 }
 
+/*  checks for binary expression of the form:
+ *    BinaryExpression := Expression [ + | - | * | / | % ] Expression
+ */
 void parse_BinaryExpression(){
   getToken();
   parse_Expression();
 }
 
+/*  checks for expression of the form:
+ *    Expression IS [NOT] Expression
+ */
 void parse_IsExpression(){
   getToken();
   if(token=="NOT")
@@ -188,6 +198,9 @@ void parse_IsExpression(){
   parse_Expression();
 }
 
+/*  checks for expression of the form:
+ *    Expression [NOT] BETWEEN Expression AND Expression
+ */
 void parse_BetweenExpression(){
   getToken();
   parse_Expression();
@@ -197,6 +210,9 @@ void parse_BetweenExpression(){
   } else fail("Error: BetweenExpression: Expecting 'AND'");
 }
 
+/*  checks for expression of the form:
+ *    Expression [NOT] IN [[(SelectStatement | Expression[, Expression])] | table]
+ */
 void parse_InExpression(){
   if(token[0]=='('){
 
@@ -221,7 +237,13 @@ void parse_InExpression(){
   else fail("Error: InExpression: Expecting Destination of IN");
 }
 
-
+/*  checks if token == "DISTINCT"
+ *    calls getToken()
+ *  calls parse_InnerSelect()
+ *  calls parse_FromStatement()
+ *  checks for where statment, group by statement, having statement, union, intersect, except, or contains
+ *    will call respective function for found statements
+ */
 void parse_SelectStatement(){
   getToken();
   if(token=="DISTINCT")
@@ -268,6 +290,8 @@ void parse_SelectStatement(){
   }
 }
 
+/*  checks for valid select clause consisting of attributes and/or aggregate functions
+ */
 void parse_InnerSelect(){
   bool isComma = false;
 
@@ -328,6 +352,10 @@ void parse_InnerSelect(){
   }
 }
 
+/*  checks if token=="FROM"
+ *    calls parse_InnerFrom()
+ *  else fail
+ */
 void parse_FromStatement(){
   if(token=="FROM"){
     currentStatement = FROM;
@@ -336,6 +364,8 @@ void parse_FromStatement(){
   } else fail("Error: expected FROM but found " + token);
 }
 
+/*  checks for valid from statement consisting of tables and possible renaming using the AS keyword
+ */
 void parse_InnerFrom(){
   bool isComma = false;
 
@@ -398,12 +428,16 @@ void parse_InnerFrom(){
   }
 }
 
+/*  calls getToken() and parse_Expression()
+ */
 void parse_WhereStatement(){
   currentStatement = WHERE;
   getToken();
   parse_Expression();
 }
 
+/*  checks for valid GROUP BY clause by calling parse_Expression() until a comma is not present
+ */
 void parse_GroupByStatement(){
   getToken();
   parse_Expression();
@@ -413,23 +447,27 @@ void parse_GroupByStatement(){
   }
 }
 
+/*  checks for valud HAVING statement consisting of:
+ *    Expression | AggregateFunction Comparison [real | string]
+ */
 void parse_HavingStatement(){
   getToken();
 
   if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
     parse_AggregateFunction();
-  else
-    parse_Member();
-
-  if(isComparison())
-    if(isReal() || isString())
-      getToken();
+    if(isComparison())
+      if(isReal() || isString())
+        getToken();
+      else
+        fail("Error: Expecting real or string");
     else
-      fail("Error: Expecting real or string");
+      fail("Error: HavingStatement: Expecting comparison operator");
   else
-    fail("Error: HavingStatement: Expecting comparison operator");
+    parse_Expression();
 }
 
+/*  checks for valid ORDER BY statement consisting of an Expression
+ */
 void parse_OrderByStatement(){
   getToken();
   parse_Expression();

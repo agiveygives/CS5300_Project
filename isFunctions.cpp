@@ -12,6 +12,9 @@
 #include "global.h"
 #include "prototypes.h"
 
+/*  returns true if token is a reserved word/character
+ *  false if the token is not
+ */
 bool isKeyword(){
   if(token=="SELECT"||token=="FROM"||token=="AS"||token=="WHERE"||token=="NOT"||
      token=="OR"||token=="AND"||token=="GROUP"||token=="BY"||token=="HAVING"||
@@ -26,6 +29,9 @@ bool isKeyword(){
     return false;
 }
 
+/*  returns true if token is a comprison operator
+ *  false if it is not
+ */
 bool isComparison(){ 
   if(token=="<"||token==">"||token=="="||token==">="||token=="<="||token=="<>"||
      token=="!="||token=="!>"||token=="!<"){
@@ -35,6 +41,8 @@ bool isComparison(){
   return false;
 }
 
+/*  returns true if token is a non-empty sequence of digits
+ */
 bool isInteger(){
   int i=0, k=0, tok_size, state=1;
   
@@ -80,6 +88,10 @@ bool isInteger(){
   return false;     // if none of the conditions are satisfied
 }
 
+/*  returns true if token is a non-empty sequence of characters beginning with a letter
+ *    and if the token is not a keyword or a table
+ *  The function will add the alias to the potentialAliases vector if it satisfied the conditions
+ */
 bool isAlias(){
   int i=0, k=0, tok_size, state=1;
   bool comma = false;
@@ -145,7 +157,8 @@ bool isAlias(){
   return false;     // if none of the conditions are satisfied
 }
 
-// checks alias against schema linked list to find match
+/* returns true if the alias exists in the schemaLL data structure
+ */
 bool checkAlias(){
   schemaLL *runner = schema;
 
@@ -160,6 +173,8 @@ bool checkAlias(){
   return false;
 }
 
+/*  returns true if the table exists in the schemaLL data structure
+ */
 bool isTable(){
   bool valid = false;
   schemaLL *runner = schema;
@@ -176,6 +191,9 @@ bool isTable(){
   return valid;
 }
 
+/*  returns true if the attribute exists in the schemaLL data structure
+ *    if a table is specified, it will check if the attribute exists in that table
+ */
 bool isAttribute(){
   bool valid = false;
   schemaLL *runner = schema;
@@ -202,6 +220,8 @@ bool isAttribute(){
   return valid;
 }
 
+/*  returns true if token is a non empty set of characters beginning an ending with single quotes (')
+ */
 bool isString(){
   int i=0, k=0, tok_size, state=0;
   
@@ -252,6 +272,9 @@ bool isString(){
   return false;     // if none of the conditions are satisfied
 }
 
+/*  returns true for an integer, negative number, or decimal
+ *    checks for an integer that can be proceeded by a '-' or followed by a '.' and another integer
+ */
 bool isReal(){
   int i=0, k=0, tok_size, state=0;
   
@@ -314,6 +337,9 @@ bool isReal(){
   return false;     // if none of the conditions are satisfied
 }
 
+/*  returns true if token is a date enclosed in quotes of the following formats
+ *      'MM/DD/YY' || 'M/D/YY' || 'M/DD/YY'
+ */
 bool isDate(){
   int i=0, k=0, tok_size, state=0;
   

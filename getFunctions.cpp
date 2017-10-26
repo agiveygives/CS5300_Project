@@ -13,9 +13,8 @@
 #include "global.h"
 #include "prototypes.h"
 
-/*  This reads the schema and populates a linked list of attributes
- *  Currently not being used in the rest of the program, but it works. So, yay.
- *  Schema must be input with a space after the table name, and a space after each comma
+/*  Reads the tokens until the first SELECT
+ *  Builds a schemaLL of the database schema
  */
 void getSchema() {
   schemaLL *table = schema;
@@ -54,10 +53,6 @@ void getSchema() {
       }
       table->m_attributeType = wholeToken;
 
-      /*cout << "Table: " << table->m_tableName << endl
-         << "Attribute: " << table->m_attributeName << endl
-         << "Type: " << table->m_attributeType << endl << endl;*/
-
       table->m_next = new schemaLL();
       table = table->m_next;
 
@@ -82,10 +77,6 @@ void getSchema() {
       wholeToken.erase(wholeToken.find(")"), 1);
       table->m_attributeType = wholeToken;
 
-      /*cout << "Table: " << table->m_tableName << endl
-         << "Attribute: " << table->m_attributeName << endl
-         << "Type: " << table->m_attributeType << endl << endl;*/
-
       table->m_next = new schemaLL();
       table = table->m_next;
     }
@@ -94,7 +85,9 @@ void getSchema() {
   }
 }
 
-// Reads in the next token and converts all the characters to uppercase
+/*  Reads tokens from cin
+ *  converts all tokens to uppercase to avoid any case sensitivity
+ */
 void getToken() {
   prevToken = token;
   cin >> token;
@@ -107,7 +100,10 @@ void getToken() {
   return;
 }
 
-// sets the alias of a specified table
+/*  if token isAlias() and not checkAlias() then this will add the alias to schemaLL and 
+ *    pop the alias from the potentailAlias vector
+ *  setAlias must be passed a string of the table the alias is associated with
+ */
 void setAlias(string aliasTable){
   schemaLL *runner = schema;
 
@@ -124,7 +120,12 @@ void setAlias(string aliasTable){
   }
 }
 
-// When a query is found invalid, print an error message and getToken until the next query
+/*  prints out which query failed and where it failed
+ *  clears the relational algebra vectors, relational algebra string, and query tree string
+ *  increments queryNum to indicate that the parser is moving to the next query
+ *  it will then call getToken until the end of the query ";" is found while constantly checking for the end
+ *  calls parse_Query()
+ */
 void fail(string error) {
   failure = true;
   tableToken = "";    // reset tableToken variable;
@@ -153,7 +154,11 @@ void fail(string error) {
   parse_Query();      
 }
 
-// When a query is valid, print the relational algebra and query tree
+/*  Checks if any aliases go undeclared and will call fail if there are
+ *  prints relational algebra dn query tree
+ *  clears relational algebra vectors, relational algebra string, and query tree
+ *  calls parse_Query() if it is not at the end of the input
+ */
 void success() {
   tableToken = "";
 
@@ -185,7 +190,9 @@ void success() {
   parse_Query();
 }
 
-// check for the end of file
+/*  checks if the prevToken == token, indicating that the input has reached the end
+ *  it then deallocated all the memory used by the linked list and exits the program
+ */
 void checkEnd() {
   if(prevToken == token) {
     if(schema != NULL){
@@ -200,7 +207,14 @@ void checkEnd() {
   }
 }
 
-// gets tokens needed to build the relational algebra expression
+/*  runs through a state machine based of which current SQL statment is active
+ *  adds the  clause of the statement to the respective vector:
+ *    SELECT -> project
+ *    FROM -> cartesianProduct
+ *    WHERE -> select
+ *  if UNION | INTERSECT | EXCEPT | CONTAINS
+ *    buildRelationalAlgebra and clear vectors
+ */
 void getRelationalAlgebra(){
   bool start = true;
   bool open = true;
@@ -312,7 +326,9 @@ void getRelationalAlgebra(){
   }
 }
 
-// builds the relational algebra string that will be printed to the console
+/*  constructs the relational algrebra string that will be printed to the console by
+ *  reading all the vectors into their respective function calls
+ */
 void buildRelationalAlgebra(){
   int i = 0;
 
@@ -346,7 +362,9 @@ void buildRelationalAlgebra(){
   buildQueryTree();
 }
 
-// builds the query tree string that will be printed to the console
+/*  constructs the query tree string that will be printed to the console by
+ *  reading all the vectors into their respective function calls and drawing proper lines
+ */
 void buildQueryTree(){
   int i = 0;
 
