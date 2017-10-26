@@ -1,3 +1,17 @@
+/*  Andrew Givens and Emma Williston
+ *  cs 5300 Project 1
+ *  File: parseFunctions.cpp
+ *  Includes:
+ *    parseQuery()                  parse_Expression()          parse_InnerSelect()        parse_OrderByStatement()   
+ *    parse_BinaryOperator()        parse_binaryExpression()    parse_FromStatement()
+ *    parse_SetOperator()           parse_isExpression()        parse_InnerFrom()
+ *    parse_AggregateOperator()     parse_betweenExpression()   parse_WhereStatement()
+ *    parse_AggregateFunction()     parse_inExpression()        parse_GroupByStatement()
+ *    parse_Member()                parse_SelectStatement()     parse_HavingStatement()
+ */
+
+
+
 #include "objects.h"
 #include "global.h"
 #include "prototypes.h"
@@ -25,12 +39,6 @@ void parse_BinaryOperator(){
     getToken();
   } else
     fail("Error: Expecting BinaryOperator");
-}
-
-void parse_BitwiseOperator(){ //need?
-}
-
-void parse_LogicalOperator(){ //need?
 }
 
 void parse_SetOperator(){
@@ -249,7 +257,7 @@ void parse_SelectStatement(){
     if(token == "SELECT"){
       parse_SelectStatement();
     } 
-    else fail("Error: Expecting SELECT bu found " + token);
+    else fail("Error: Expecting SELECT but found " + token);
   }
   
   if(token=="ORDER"){
@@ -325,7 +333,7 @@ void parse_FromStatement(){
     currentStatement = FROM;
     getToken();
     parse_InnerFrom();
-  } else fail("Error: expected FROM, but found " + token);
+  } else fail("Error: expected FROM but found " + token);
 }
 
 void parse_InnerFrom(){
@@ -339,7 +347,7 @@ void parse_InnerFrom(){
   if(isTable()){
     tableToken = token;
     string aliasTable = token;
-    getToken();
+    getToken();   
     if(token=="AS"){
       getToken();
       if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
@@ -352,6 +360,7 @@ void parse_InnerFrom(){
       }
       else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
     }
+    else if(isAlias()) fail("Error: Found alias [ " + token + " ] after a table without AS statement");
   }
   else if(token[0]=='('){
 

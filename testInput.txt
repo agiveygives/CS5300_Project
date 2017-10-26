@@ -22,7 +22,7 @@ WHERE 	Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND
 
 SELECT 	S.sname
 FROM 	Sailors AS S, Reserves AS R
-WHERE 	R.sid  =  S.sid AND R.bid  =  100 AND 	
+WHERE 	R.sid  =  S.sid AND R.bid = 100 AND R.rating > 5 AND 	
 		R.day = '8/9/09' ;
 
 SELECT 	sname
@@ -41,11 +41,11 @@ WHERE 	S.sid = R.sid AND R.bid = B.bid AND B.color = 'red'
 EXCEPT
 SELECT 	S2.sid
 FROM 	Sailors AS S2, Reserves AS R2, Boats AS B2
-WHERE 	S2.sid = R2.sid AND R2.bid = B2.bid AND B2.color = 'green' ;
+WHERE 	S2.sid = R2.sid AND R2.bid = B2.bid AND B.2color = 'green' ;
 
 SELECT 	S.sname
 FROM 	Sailors AS S
-WHERE 	S.sid IN (SELECT R.sid
+WHERE 	S.sid IN ( SELECT R.sid
  					FROM 	Reserves AS R
  					WHERE 	R.bid = 103) ;
 
@@ -53,7 +53,7 @@ SELECT 	S.sname
 FROM 	Sailors AS S
 WHERE 	S.sid IN ( SELECT R.sid
  					FROM 	Reserves AS R, Boats AS B
- 					WHERE R.bid  =  B.bid AND B.color  =  'red'
+ 					WHERE R.bid = B.bid AND B.color = 'red'
  					INTERSECT
  					SELECT R2.sid
  					FROM Reserves AS R2, Boats AS B2
@@ -63,15 +63,15 @@ SELECT 	S.sname
 FROM 	Sailors AS S
 WHERE 	S.age > (SELECT MAX (S2.age)
 				FROM 	Sailors AS S2
-				WHERE 	R.sid  =  S2.sid AND R.sid =  10 ) ;
+				WHERE 	R.sid  =  S2.sid AND R.rating =  10 ) ;
 
 SELECT 		B.bid, Count (*) AS reservationcount
-FROM 		Boats AS B, Reserves AS R
+FROM 		Boats B, Reserves R
 WHERE 		R.bid = B.bid AND B.color = 'red'
 GROUP BY 	B.bid ;
 
 SELECT 		B.bid, Count (*) AS reservationcount
-FROM 		Boats AS B, Reserves AS R
+FROM 		Boats B, Reserves R
 WHERE 		R.bid = B.bid AND B.color  =  'red'
 GROUP BY 	B.bid
 HAVING 		B.color = 'red' ;
@@ -81,12 +81,16 @@ FROM 		Sailors
 WHERE 		Sailors.sid IN (SELECT Reserves.bid, Reserves.sid
  							FROM Reserves
  							CONTAINS
- 							SELECT Boats.bid
+ 							SLECT Boats.bid
  							FROM Boats
- 							WHERE Boats.bname  =  'interlake' ) ;
+ 							WHERE Boats.name  =  'interlake' ) ;
 
-SELECT 		S.rating, Avg (S.age) As average
+SELECT 		S.rating, Ave (S.age) As average
 FROM 		Sailors AS S
 WHERE 		S.age > 18
 GROUP BY 	S.rating
 HAVING 		Count (*) > 1 ;
+
+SELECT 	S.sname
+FROM	Sailors AS S, Reserves AS R
+WHERE	S.sid = R.sid AND R.bid = '103' ;

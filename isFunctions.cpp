@@ -1,3 +1,13 @@
+/*  Andrew Givens and Emma Williston
+ *  cs 5300 Project 1
+ *  File: isFunctions.cpp
+ *  Includes:
+ *    isKeyword()         checkAlias()      isReal()
+ *    isComparison()      isTable()         isDate()
+ *    isInteger()         isAttribute()
+ *    isAlias()           isString()
+ */
+
 #include "objects.h"
 #include "global.h"
 #include "prototypes.h"
@@ -8,7 +18,7 @@ bool isKeyword(){
      token=="IN"||token=="MAX"||token=="MIN"||token=="+"||token=="-"||
      token=="~"||token=="*"||token=="/"||token=="%"||token=="ALL"||token=="ANY"||
      token=="BETWEEN"||token=="EXISTS"||token=="LIKE"||token=="SOME"||token=="UNION"||
-     token=="INTERSECT"||token=="EXCEPT"||token=="AVG"||token=="COUNT"||token=="SUM"||
+     token=="INTERSECT"||token=="EXCEPT"||token=="AVG"||token=="COUNT"||token=="SUM"|| token == "CONTAINS" ||
      token=="<"||token==">"||token=="="||token==">="||token=="<="||token=="<>"||
      token=="!="||token=="!>"||token=="!<")
     return true;
@@ -57,22 +67,30 @@ bool isInteger(){
     }//switch
     k++;
   }//while
-  if(k==tok_size){
-    switch(state){
-      case 3: 
-        return true;
-      default: 
-        return false;
-    }//switch
-  }//if
+  if(k==tok_size && state == 3)
+    if(attributeType == "INTEGER")
+      return true;
+    else {
+      fail("Error: Expected " + attributeType);
+      return false;
+    }
+  else 
+    return false;
 
   return false;     // if none of the conditions are satisfied
 }
 
 bool isAlias(){
   int i=0, k=0, tok_size, state=1;
+  bool comma = false;
 
   tok_size = strlen(token.c_str());
+
+  if(token[tok_size-1] == ','){
+    comma = true;
+    token.erase(tok_size-1, 1);
+    tok_size--;
+  }
   
   if(!isKeyword() && !isTable()){
     tableToken = "";
@@ -91,6 +109,8 @@ bool isAlias(){
             state=2;
           break;
         default: //state 2=failure
+          if(comma)
+            token += ",";
           return false;
       }//switch
       k++;
@@ -101,21 +121,31 @@ bool isAlias(){
           if(!checkAlias()){
             for(int i = 0 ; i < potentialAlias.size(); i++){
               if(potentialAlias[i] == token){
+                if(comma)
+                  token += ",";
                 return true;
               }
             }
             potentialAlias.push_back(token);
           }
+          if(comma)
+            token += ",";
           return true;
-        default: return false;
+        default: 
+          if(comma)
+            token += ",";
+          return false;
       }//switch
     }//if
   }
   tableToken = "";
 
+  if(comma)
+    token += ",";
   return false;     // if none of the conditions are satisfied
 }
 
+// checks alias against schema linked list to find match
 bool checkAlias(){
   schemaLL *runner = schema;
 
@@ -153,17 +183,21 @@ bool isAttribute(){ //Need to change to not being hardcoded
     while(runner != NULL) {
       if(tableToken == "") {
         if(token == runner->m_attributeName) {
+          attributeType = runner->m_attributeType;
           valid = true;
           break;
         }
       } else if(tableToken == runner->m_tableName) {
         if(token == runner->m_attributeName) {
+          attributeType = runner->m_attributeType;
           valid = true;
           break;
         }
       }
       runner = runner->m_next;
     }
+  if(!valid)
+    attributeType = "";
 
   return valid;
 }
@@ -204,13 +238,15 @@ bool isString(){
     }
     k++;
   }
-  if(k==tok_size){
-    if(state==3){
+  if(k==tok_size && state==3)
+    if(attributeType == "STRING")
       return true;
-    }else{
+    else {
+      fail("Error: Expected " + attributeType);
       return false;
     }
-  }
+  else
+    return false;
 
   cout << "return false\n";
   return false;     // if none of the conditions are satisfied
@@ -265,12 +301,15 @@ bool isReal(){
     }//switch
     k++;
   }//while
-  if(k==tok_size){
-    if(state==3||state==6)
+  if(k==tok_size && (state==3||state==6)){
+    if(attributeType == "REAL")
       return true;
-    else
+    else {
+      fail("Error: Expected " + attributeType);
       return false;
-  }//if
+    }
+  } else
+    return false;
 
   return false;     // if none of the conditions are satisfied
 }
@@ -385,12 +424,15 @@ bool isDate(){
     }
     k++;
   }
-  if(k==tok_size){
-    if(state==14)
+  if(k==tok_size && state == 14)
+    if(attributeType == "DATE")
       return true;
-    else
+    else {
+      fail("Error: Expected " + attributeType);
       return false;
-  }
+    }
+  else
+    return false;
 
   return false;     // if none of the conditions are satisfied
 }

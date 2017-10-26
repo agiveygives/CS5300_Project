@@ -15,6 +15,7 @@
 string token = "";
 string tableToken = token;
 string prevToken = token;
+string attributeType = "";
 string relationalAlgebra = "";
 string queryTree = "";
 

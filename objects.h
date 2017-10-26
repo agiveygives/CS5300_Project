@@ -1,3 +1,12 @@
+/*  Andrew Givens and Emma Williston
+ *  cs 5300 Project 1
+ *  File: objects.h
+ *  Includes:
+ *    	class schemaLL
+ *		enum statement
+ */
+
+
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
@@ -30,22 +39,8 @@ class schemaLL {
 		}
 };
 
-/*	This class will be used to store items to build our relational algebra expression
- */
-class relationalAlgebra {
-
-	public:
-
-};
-
-/*	This class will be used to build and display our query tree
- */
-class queryTree {
-
-	public:
-
-};
-
+// enumerator to store the current SQL statement we are in.
+// Used to build relational algebra
 enum statement {
 	NONE,
 	SELECT,

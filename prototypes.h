@@ -1,3 +1,10 @@
+/*  Andrew Givens and Emma Williston
+ *  cs 5300 Project 1
+ *  File: prototypes.h
+ *  Includes:
+ *    all function prototypes
+ */
+
 #ifndef PROTOTYPES_H
 #define PROTOTYPES_H
 #include "objects.h"
@@ -27,8 +34,6 @@ void setAlias(string);
 
 void parse_UnaryOperator();
 void parse_BinaryOperator();
-void parse_BitwiseOperator(); //need?
-void parse_LogicalOperator(); //need?
 void parse_SetOperator();
 void parse_AggregateOperator();
 

@@ -1,3 +1,14 @@
+/*  Andrew Givens and Emma Williston
+ *  cs 5300 Project 1
+ *  File: getFunctions.cpp
+ *  Includes:
+ *    getSchema()     Success()                     buildQueryTree()
+ *    getToken()      checkEnd()
+ *    setAlias()      getRelationalAlgebra()
+ *    fail()          buildRelationalAlgebra()
+ */
+
+
 #include "objects.h"
 #include "global.h"
 #include "prototypes.h"
@@ -149,10 +160,11 @@ void success() {
 
   // if any aliases went undeclared
   if(potentialAlias.size() > 0){
+    string error = "";
     for(int i = 0; i < potentialAlias.size(); i++){
-      cout << "Error: " << potentialAlias[i] << " not declared\n";
+      error += "Error: " + potentialAlias[i] + " not declared\n";
     }
-    fail("");
+    fail(error);
   }
   cout << "\nQuery " << queryNum << " was successful\n";
   queryNum++;
@@ -160,6 +172,8 @@ void success() {
   buildRelationalAlgebra();
   cout << relationalAlgebra << endl;
   cout << endl << queryTree << endl << endl;
+
+  // reset vectors and strings
   select.clear();
   project.clear();
   cartesianProduct.clear();
@@ -187,6 +201,7 @@ void checkEnd() {
   }
 }
 
+// gets tokens needed to build the relational algebra expression
 void getRelationalAlgebra(){
   bool start = true;
   bool open = true;
@@ -215,6 +230,7 @@ void getRelationalAlgebra(){
     project.clear();
     cartesianProduct.clear();
     relationalAlgebra += "UNION";
+    queryTree += "\n\t\t^\n\t\t|\n\t\tUNION\n\t\t|\n\t\tv\n";
 
     currentStatement = UNION;
   }
@@ -226,6 +242,7 @@ void getRelationalAlgebra(){
     project.clear();
     cartesianProduct.clear();
     relationalAlgebra += "INTERSECT";
+    queryTree += "\n\t\t^\n\t\t|\n\t\tINTERSECT\n\t\t|\n\t\tv\n";
 
     currentStatement = INTERSECT;
   }
@@ -237,6 +254,7 @@ void getRelationalAlgebra(){
     project.clear();
     cartesianProduct.clear();
     relationalAlgebra += " - ";
+    queryTree += "\n\t\t^\n\t\t|\n\t\tDIFFERENCE\n\t\t|\n\t\tv\n";
 
     currentStatement = EXCEPT;
   }
@@ -283,22 +301,19 @@ void getRelationalAlgebra(){
       case HAVING:
         select.push_back(token);
         break;
-      case UNION:
-        break;
-      case INTERSECT:
-        break;
-      case EXCEPT:
-        break;
       case IN_EXISTS:
         if(token != "SELECT" && token != "(SELECT" && token != "("){
           select.push_back(token);
           select.push_back("AND");
         }
         break;
+      default:
+        break;
     }
   }
 }
 
+// builds the relational algebra string that will be printed to the console
 void buildRelationalAlgebra(){
   int i = 0;
 
@@ -332,6 +347,7 @@ void buildRelationalAlgebra(){
   buildQueryTree();
 }
 
+// builds the query tree string that will be printed to the console
 void buildQueryTree(){
   int i = 0;
 
