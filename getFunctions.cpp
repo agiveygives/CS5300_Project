@@ -23,7 +23,7 @@ void getSchema() {
   int split = 0;
 
   getToken();
-  while(token != "SELECT") { // loops until it reads the first token of the queries
+  while(token != "SELECT" && token != "(SELECT") { // loops until it reads the first token of the queries
     currentTable = token;
 
     getToken();
@@ -83,6 +83,7 @@ void getSchema() {
     }
 
     getToken();
+    checkEnd();
   }
 }
 
