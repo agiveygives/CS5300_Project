@@ -453,16 +453,16 @@ void parse_GroupByStatement(){
 void parse_HavingStatement(){
   getToken();
 
-  if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM")
+  if(token=="AVG" || token=="COUNT" || token=="MAX" || token=="MIN" || token=="SUM") {
     parse_AggregateFunction();
-    if(isComparison())
+    if(isComparison()){
       if(isReal() || isString())
         getToken();
       else
         fail("Error: Expecting real or string");
-    else
-      fail("Error: HavingStatement: Expecting comparison operator");
-  else
+    } else
+        fail("Error: HavingStatement: Expecting comparison operator");
+  } else
     parse_Expression();
 }
 
