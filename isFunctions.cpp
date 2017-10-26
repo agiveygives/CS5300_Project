@@ -216,7 +216,7 @@ bool isString(){
   return false;     // if none of the conditions are satisfied
 }
 
-bool isReal(){         // possibly won't return
+bool isReal(){
   int i=0, k=0, tok_size, state=0;
   
   tok_size = strlen(token.c_str());  
@@ -275,8 +275,8 @@ bool isReal(){         // possibly won't return
   return false;     // if none of the conditions are satisfied
 }
 
-bool isDate(){         // possibly won't return
-  int i=0, k=0, tok_size, state=1;
+bool isDate(){
+  int i=0, k=0, tok_size, state=0;
   
   tok_size = strlen(token.c_str());   
   

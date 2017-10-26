@@ -189,7 +189,7 @@ void getRelationalAlgebra(){
   bool start = true;
   bool open = true;
 
-  if(token == "SELECT"){
+  if(token == "SELECT" || token == "(SELECT"){
     start = false;
     currentStatement = SELECT;
   }

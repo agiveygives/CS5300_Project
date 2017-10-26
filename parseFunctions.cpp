@@ -98,7 +98,7 @@ void parse_Member(){ //NEEDS CODE! IMPORTANT!
 void parse_Expression(){ //needs review
   int tokenLength = strlen(token.c_str());
 
-  if(isInteger() || isString()){
+  if(isInteger() || isString() || isDate() || isReal()){
     getToken();
   }
   else if(token.find(".") < tokenLength){ // member
@@ -107,9 +107,17 @@ void parse_Expression(){ //needs review
   else if(isAttribute()){
     getToken();
   } 
-  else if(token=="("){
-    getToken();
-    parse_Expression();
+  else if(token[0]=='('){
+    if(strlen(token.c_str()) > 1)
+      token.erase(0,1);
+    else
+      getToken();
+
+    if(token == "SELECT"){
+      parse_SelectStatement();
+    }
+    else
+      parse_Expression();
     if(token==")")
       getToken();
     else fail("Error: Expression: Expecting ')'");
@@ -226,6 +234,9 @@ void parse_SelectStatement(){
     currentStatement = HAVING;
     parse_HavingStatement();
   }
+
+  if(token == ")")
+    return;
   
   while(token=="UNION" || token=="INTERSECT" || token == "EXCEPT" || token == "CONTAINS"){
     getToken();
