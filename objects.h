@@ -53,7 +53,9 @@ enum statement {
 	WHERE,
 	HAVING,
 	UNION,
-	INTERSECT
+	INTERSECT,
+	EXCEPT,
+	IN_EXISTS
 };
 
 #endif

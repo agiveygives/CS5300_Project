@@ -191,7 +191,7 @@ void getRelationalAlgebra(){
   bool start = true;
   bool open = true;
 
-  if(token == "SELECT" || token == "(SELECT"){
+  if((token == "SELECT" || token == "(SELECT") && currentStatement != IN_EXISTS){
     start = false;
     currentStatement = SELECT;
   }
@@ -229,6 +229,22 @@ void getRelationalAlgebra(){
 
     currentStatement = INTERSECT;
   }
+  else if(token == "EXCEPT"){
+    start = false;
+
+    buildRelationalAlgebra();
+    select.clear();
+    project.clear();
+    cartesianProduct.clear();
+    relationalAlgebra += " - ";
+
+    currentStatement = EXCEPT;
+  }
+  else if(token == "IN" || token == "EXISTS"){
+    start = false;
+    select.push_back("=");
+    currentStatement = IN_EXISTS;
+  }
 
   if(start && token != ";"){
     switch(currentStatement){
@@ -265,10 +281,19 @@ void getRelationalAlgebra(){
         select.push_back(token);
         break;
       case HAVING:
+        select.push_back(token);
         break;
       case UNION:
         break;
       case INTERSECT:
+        break;
+      case EXCEPT:
+        break;
+      case IN_EXISTS:
+        if(token != "SELECT" && token != "(SELECT" && token != "("){
+          select.push_back(token);
+          select.push_back("AND");
+        }
         break;
     }
   }
@@ -310,13 +335,14 @@ void buildRelationalAlgebra(){
 void buildQueryTree(){
   int i = 0;
 
-  queryTree += "\nPROJECT(";
-  for(i = 0; i < project.size(); i++){
-    queryTree +=  project[i];
-    if(i+1 < project.size())
-      queryTree +=  " ";
-  }
-  queryTree +=  ")\n\t|\n\t|\n";
+  if(cartesianProduct.size() >= 1){
+    queryTree += cartesianProduct[0];
+    queryTree += "\n  |\n  |\n  V\n";
+    for( i = 1; i < cartesianProduct.size(); i++){
+      queryTree += "  X <------" + cartesianProduct[i];
+      queryTree += "\n  |\n  |\n  V\n";
+    }
+  } 
 
   queryTree += "SELECT(";
   for(i = 0; i < select.size(); i++){
@@ -324,15 +350,13 @@ void buildQueryTree(){
     if(i+1 < select.size())
       queryTree +=  " ";
   }
-  queryTree +=  ")\n\t|\n\t|\n";
+  queryTree +=  ")\n  |\n  |\n  V\n";
 
-  /*if(cartesianProduct.size() == 1)
-    queryTree += cartesianProduct[0];
-  else if(cartesianProduct.size() > 1){
-    queryTree += "\tX\n\t";
-    for(i = cartesianProduct.size()-1; i > 0; i--){
-      queryTree += "/\\\n   / \\\n\t\t";
-      queryTree += cartesianProduct[i];
-    }
-  }*/
+  queryTree += "PROJECT(";
+  for(i = 0; i < project.size(); i++){
+    queryTree +=  project[i];
+    if(i+1 < project.size())
+      queryTree +=  " ";
+  }
+  queryTree +=  ")\n\n";
 }

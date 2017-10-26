@@ -51,19 +51,19 @@ WHERE 	S.sid IN (SELECT R.sid
 
 SELECT 	S.sname
 FROM 	Sailors AS S
-WHERE 	S.sid IN ( (SELECT R.sid
+WHERE 	S.sid IN ( SELECT R.sid
  					FROM 	Reserves AS R, Boats AS B
- 					WHERE R.bid  =  B.bid AND B.color  =  'red')
+ 					WHERE R.bid  =  B.bid AND B.color  =  'red'
  					INTERSECT
- 					(SELECT R2.sid
- 						FROM Reserves AS R2, Boats AS B2
- 						WHERE R2.bid  =  B2.bid AND B2.color  =  'green') ) ;
+ 					SELECT R2.sid
+ 					FROM Reserves AS R2, Boats AS B2
+ 					WHERE R2.bid  =  B2.bid AND B2.color  =  'green' ) ;
 
 SELECT 	S.sname
 FROM 	Sailors AS S
 WHERE 	S.age > (SELECT MAX (S2.age)
-					FROM 	Sailors AS S2
-					WHERE 	R.sid  =  S2.sid AND R.sid =  10 ) ;
+				FROM 	Sailors AS S2
+				WHERE 	R.sid  =  S2.sid AND R.sid =  10 ) ;
 
 SELECT 		B.bid, Count (*) AS reservationcount
 FROM 		Boats AS B, Reserves AS R
@@ -78,12 +78,12 @@ HAVING 		B.color = 'red' ;
 
 SELECT 		Sname
 FROM 		Sailors
-WHERE 		Sailor.sid IN (SELECT Reserves.bid, Reserves.sid
+WHERE 		Sailors.sid IN (SELECT Reserves.bid, Reserves.sid
  							FROM Reserves
  							CONTAINS
- 							(SELECT Boats.bid
- 								FROM Boats
- 								WHERE Boats.bname  =  'interlake') ) ;
+ 							SELECT Boats.bid
+ 							FROM Boats
+ 							WHERE Boats.bname  =  'interlake' ) ;
 
 SELECT 		S.rating, Avg (S.age) As average
 FROM 		Sailors AS S
