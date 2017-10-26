@@ -57,6 +57,7 @@ void getSchema() {
       table = table->m_next;
 
       getToken();
+      checkEnd();
     }
 
     if(token != ")") {
