@@ -71,7 +71,7 @@ void parse_AggregateFunction(){
       getToken();
       parse_Expression();
     }
-    if(token=="*") //REVIEW this if statement
+    if(token=="*")
       getToken();
     else
       parse_Expression();
@@ -83,7 +83,7 @@ void parse_AggregateFunction(){
   } else fail("Error: AggregateFunction: Expecting '('");
 }
 
-void parse_Member(){ //NEEDS CODE! IMPORTANT!
+void parse_Member(){
   schemaLL *runner = schema;
   string temp = "";
   tableToken = token;
@@ -103,7 +103,7 @@ void parse_Member(){ //NEEDS CODE! IMPORTANT!
   } else fail("Error: parse_Member: " + token + " is not a relation in the schema");
 }
 
-void parse_Expression(){ //needs review
+void parse_Expression(){
   int tokenLength = strlen(token.c_str());
 
   if(isInteger() || isString() || isDate() || isReal()){
@@ -268,7 +268,7 @@ void parse_SelectStatement(){
   }
 }
 
-void parse_InnerSelect(){ //NEEDS WORK
+void parse_InnerSelect(){
   bool isComma = false;
 
   if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token

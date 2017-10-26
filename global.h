@@ -20,7 +20,8 @@ extern string queryTree;			// stores query tree to be printed
 
 extern statement currentStatement;	// stores current statement enum for building the relational algebra
 extern int queryNum;				// stores query number to show the user which query failed/succeeded
-extern bool failure;				// stores whether or not the query failed (prevents relational algebra from being generated after failure)
+extern bool failure;				// stores whether or not the query failed 
+									// 		(prevents relational algebra from being generated after failure)
 extern locale loc;
 
 extern schemaLL *schema;				// Linked list of schema

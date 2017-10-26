@@ -160,7 +160,7 @@ bool checkAlias(){
   return false;
 }
 
-bool isTable(){ //Need to change to not being hardcoded
+bool isTable(){
   bool valid = false;
   schemaLL *runner = schema;
   
@@ -176,7 +176,7 @@ bool isTable(){ //Need to change to not being hardcoded
   return valid;
 }
 
-bool isAttribute(){ //Need to change to not being hardcoded
+bool isAttribute(){
   bool valid = false;
   schemaLL *runner = schema;
 

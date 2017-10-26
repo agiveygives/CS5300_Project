@@ -32,19 +32,19 @@ vector<string> project;
 vector<string> cartesianProduct;
 
 int main() {
-	getSchema();
+  getSchema();
 
-	while(prevToken != token)
-		parse_Query();
+  while(prevToken != token)
+    parse_Query();
 
-	if(schema != NULL){
-		schemaLL *del;
-		while(schema != NULL){
-			del = schema;
-			schema = schema->m_next;
-			delete del;
-		}
-	}
+  if(schema != NULL){
+    schemaLL *del;
+    while(schema != NULL){
+      del = schema;
+      schema = schema->m_next;
+      delete del;
+    }
+  }
 
-	return 0;
+  return 0;
 }

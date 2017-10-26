@@ -104,7 +104,6 @@ void getToken() {
   
   for (int i = 0; i < token.length(); i++)
     token[i] = toupper(token[i],loc);
-  //cout << "token: " << token << endl;
   return;
 }
 
@@ -188,7 +187,7 @@ void success() {
 
 // check for the end of file
 void checkEnd() {
-  if(prevToken == token) {      // fix because ') )' causes this to return true
+  if(prevToken == token) {
     if(schema != NULL){
       schemaLL *del;
       while(schema != NULL){
