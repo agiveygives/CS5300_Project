@@ -126,6 +126,7 @@ void fail(string error) {
   project.clear();
   cartesianProduct.clear();
   relationalAlgebra = "";
+  queryTree = "";
   queryNum++;
 
   //go to the end of the query
@@ -158,11 +159,12 @@ void success() {
 
   buildRelationalAlgebra();
   cout << relationalAlgebra << endl;
-  printQueryTree();
+  cout << endl << queryTree << endl << endl;
   select.clear();
   project.clear();
   cartesianProduct.clear();
   relationalAlgebra = "";
+  queryTree = "";
 
   getToken();
   checkEnd();
@@ -301,8 +303,36 @@ void buildRelationalAlgebra(){
   }
 
   relationalAlgebra +=  "))";
+
+  buildQueryTree();
 }
 
-void printQueryTree(){
+void buildQueryTree(){
+  int i = 0;
 
+  queryTree += "\nPROJECT(";
+  for(i = 0; i < project.size(); i++){
+    queryTree +=  project[i];
+    if(i+1 < project.size())
+      queryTree +=  " ";
+  }
+  queryTree +=  ")\n\t|\n\t|\n";
+
+  queryTree += "SELECT(";
+  for(i = 0; i < select.size(); i++){
+    queryTree +=  select[i];
+    if(i+1 < select.size())
+      queryTree +=  " ";
+  }
+  queryTree +=  ")\n\t|\n\t|\n";
+
+  /*if(cartesianProduct.size() == 1)
+    queryTree += cartesianProduct[0];
+  else if(cartesianProduct.size() > 1){
+    queryTree += "\tX\n\t";
+    for(i = cartesianProduct.size()-1; i > 0; i--){
+      queryTree += "/\\\n   / \\\n\t\t";
+      queryTree += cartesianProduct[i];
+    }
+  }*/
 }
