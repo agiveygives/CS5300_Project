@@ -262,6 +262,8 @@ void parse_SelectStatement(){
   }  
   if(token=="HAVING"){
     currentStatement = HAVING;
+    if(select.size() > 0)
+      select.push_back("AND");
     parse_HavingStatement();
   }
 

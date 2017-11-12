@@ -75,14 +75,9 @@ bool isInteger(){
     }//switch
     k++;
   }//while
-  if(k==tok_size && state == 3)
-    if(attributeType == "INTEGER")
-      return true;
-    else {
-      fail("Error: Expected " + attributeType);
-      return false;
-    }
-  else 
+  if(k==tok_size && state == 3){
+    return true;
+  } else 
     return false;
 
   return false;     // if none of the conditions are satisfied
@@ -258,14 +253,9 @@ bool isString(){
     }
     k++;
   }
-  if(k==tok_size && state==3)
-    if(attributeType == "STRING")
-      return true;
-    else {
-      fail("Error: Expected " + attributeType);
-      return false;
-    }
-  else
+  if(k==tok_size && state==3){
+    return true;
+  } else
     return false;
 
   cout << "return false\n";
@@ -325,12 +315,7 @@ bool isReal(){
     k++;
   }//while
   if(k==tok_size && (state==3||state==6)){
-    if(attributeType == "REAL")
-      return true;
-    else {
-      fail("Error: Expected " + attributeType);
-      return false;
-    }
+    return true;
   } else
     return false;
 
@@ -450,14 +435,9 @@ bool isDate(){
     }
     k++;
   }
-  if(k==tok_size && state == 14)
-    if(attributeType == "DATE")
-      return true;
-    else {
-      fail("Error: Expected " + attributeType);
-      return false;
-    }
-  else
+  if(k==tok_size && state == 14){
+    return true;
+  } else
     return false;
 
   return false;     // if none of the conditions are satisfied
