@@ -17,6 +17,7 @@ extern string prevToken;			// stores the previous token to check for EOF
 extern string attributeType;		// stores the variable type of an attribute
 extern string relationalAlgebra;	// stores relational algebra string to be printed
 extern string queryTree;			// stores query tree to be printed
+extern string optimizedTree;		// stores optimized query tree to be printed
 
 extern statement currentStatement;	// stores current statement enum for building the relational algebra
 extern int queryNum;				// stores query number to show the user which query failed/succeeded

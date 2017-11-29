@@ -178,6 +178,7 @@ void success() {
   buildRelationalAlgebra();
   cout << relationalAlgebra << endl;
   cout << endl << queryTree << endl << endl;
+  cout << endl << optimizedTree << endl << endl;
 
   // reset vectors and strings
   select.clear();
@@ -185,6 +186,7 @@ void success() {
   cartesianProduct.clear();
   relationalAlgebra = "";
   queryTree = "";
+  optimizedTree = "";
 
   getToken();
   checkEnd();
@@ -350,13 +352,15 @@ void buildRelationalAlgebra(){
   }
   relationalAlgebra +=  ")";
 
-  relationalAlgebra +=  "(";
+  
   for(i = 0; i < cartesianProduct.size(); i++){
+    relationalAlgebra +=  "(";
     relationalAlgebra +=  cartesianProduct[i];
     if(i+1 < cartesianProduct.size())
       relationalAlgebra +=  " x ";
     else
-      relationalAlgebra +=  ")";
+      for(int j = 0; j < cartesianProduct.size() - 1; j++)
+        relationalAlgebra +=  ")";
   }
 
   relationalAlgebra +=  "))";
@@ -394,4 +398,110 @@ void buildQueryTree(){
       queryTree +=  " ";
   }
   queryTree +=  ")\n\n";
+
+  optimizedQueryTree();
+}
+
+/*  Constructs an optimized query tree that will be printed to the console by
+ *  reading all the vectors into their respective function calls associated with
+ *  the correct table and drawing proper lines
+ */
+void optimizedQueryTree(){
+  vector<string> tableProject;
+  string prevToken = token;
+  string prevTableToken = tableToken;
+  string currentTable = "";
+  int i = 0;
+  int table = 0;
+
+  for(i = 0; i < cartesianProduct.size(); i++) {
+    tableProject.clear();
+
+    cout << endl << cartesianProduct[i] << endl;
+    currentTable = cartesianProduct[i];
+    for (int k = 0; k < currentTable.length(); k++)
+      currentTable[k] = toupper(currentTable[k],loc);
+
+    getAttributes(select, tableProject, currentTable);
+    getAttributes(project, tableProject, currentTable);
+
+    if(i == 0){
+      optimizedTree += "      " + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
+    } else {
+      optimizedTree += "<---";
+    }
+
+    optimizedTree += "PROJECT(";
+    for(int j = 0; j < tableProject.size(); j++){
+      if(j+1 != tableProject.size())
+        optimizedTree += tableProject[j] + ", ";
+      else
+        optimizedTree += tableProject[j] + ")";
+    }
+
+    if(i == 0){
+      optimizedTree += "\n\t|\n\t|\n\tV\n";
+    } else {
+      optimizedTree += "<---" + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
+    }
+      
+    if(i + 1 != cartesianProduct.size()){
+      optimizedTree += "JOIN(";
+      for(int j = 0; j < select.size(); j++){
+        optimizedTree +=  select[j];
+        if(j+1 < select.size())
+          optimizedTree +=  " ";
+        else
+          optimizedTree += ")";
+      }
+    }      
+  }
+
+  tableToken = prevTableToken;
+  token = prevToken;
+}
+
+void getAttributes(vector<string> queryTokens, vector<string> &tableProject, string currentTable){
+  string temp = "";
+  string tempUpper = "";
+  string attribute = "";
+
+  for(int j = 0; j < queryTokens.size(); j++) {
+    temp = queryTokens[j];
+    if(temp[temp.length() - 1] == ','){
+      temp.erase(temp.length() - 1, 1);
+    }
+    if(temp.find(".") < temp.length() - 1){
+      attribute = temp;
+
+      temp.erase(temp.find("."), strlen(temp.c_str()));                   // get table associated with attribute
+      attribute.erase(0, attribute.find(".") + 1);                        // get attribute
+
+      tempUpper = temp;
+      for (int k = 0; k < tempUpper.length(); k++)
+        tempUpper[k] = toupper(tempUpper[k],loc);
+
+      if(currentTable != tempUpper){
+        token = temp;
+        if(checkAlias() && currentTable == tableToken){
+          cout << '\t' << attribute << endl;
+          tableProject.push_back(attribute);
+        }
+      } else {
+        cout << '\t' << attribute << endl;
+        tableProject.push_back(attribute);
+      }
+    } else {
+      token = temp;
+      for(int k = 0; k < token.length(); k++)
+        token[k] = toupper(token[k],loc);
+
+      tableToken = currentTable;
+
+      if(isAttribute()){
+        cout << '\t' << temp << endl;
+        tableProject.push_back(temp);
+      }
+    }
+  }
 }

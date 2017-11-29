@@ -2,91 +2,97 @@ Sailors	(sid:integer, sname:string, rating:integer, age:real)
 Boats (bid:integer, bname:string, color:string)
 Reserves (sid:integer, bid:integer, day:date) 
 
-SELECT 	S.sname
-FROM	Sailors AS S, Reserves AS R
-WHERE	S.sid = R.sid AND R.bid = 103 ;
+SELECT		S.sid, S.sname, S.rating, S.age
+FROM		Sailors AS S
+WHERE		S.rating > 7 ;
 
-SELECT 	S.sname
-FROM	Sailors AS S, Reserves AS R, Boats AS B
-WHERE	S.sid = R.sid AND R.bid = B.bid AND B.color = 'red' ;
+SELECT		S.sid, S.sname
+FROM 		Sailors AS S
+WHERE 		S.color = 'green' ;
 
-SELECT 	sname
-FROM 	Sailors, Boats, Reserves
-WHERE 	Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND 
-		Boats.color = 'red'
+SELECT		B.color
+FROM		Sailors AS S, Reserves AS R, Boats AS B
+WHERE		S.sid = R.sid AND R.bid = B.bid AND S.sname = 'Lubber' ;
+
+SELECT 		sname
+FROM		Sailors, Boats, Reserves
+WHERE		Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND Boats.color = 'red'
 UNION
-SELECT 	sname
-FROM 	Sailors, Boats, Reserves
-WHERE 	Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND
-		Boats.color = 'green' ;
+SELECT		sname
+FROM		Sailors, Boats, Reserves
+WHERE 		Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND Boats.color = 'green' ;
 
-SELECT 	S.sname
-FROM 	Sailors AS S, Reserves AS R
-WHERE 	R.sid  =  S.sid AND R.bid = 100 AND R.rating > 5 AND 	
-		R.day = '8/9/09' ;
+SELECT		S.sname
+FROM 		Sailors AS S, Reserves AS R
+WHERE 		R.sid = S.sid AND R.bid = 100 AND R.rating > 5 AND R.day = '8/9/09' ;
 
-SELECT 	sname
-FROM 	Sailors, Boats, Reserves
-WHERE 	Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND
-		Boats.color = 'red'
+SELECT		sname
+FROM		Sailors, Boats, Reserves
+WHERE 		Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND Boats.color = 'red'
 INTERSECT
-SELECT 	sname
-FROM 	Sailors, Boats, Reserves
-WHERE 	Sailors.sid = Reserves.sid AND Reserves.bid = Boats.bid AND
-		Boats.color = 'green' ;
+SELECT		sname
+FROM 		Sailors, Boats, Reserves
+WHERE 		Sailors.sid = Reserves.sid And Reserves.bid = Boats.bid AND Boats.color = 'green' ;
 
-SELECT 	S.sid
-FROM 	Sailors AS S, Reserves AS R, Boats AS B
-WHERE 	S.sid = R.sid AND R.bid = B.bid AND B.color = 'red'
+SELECT		S.sid
+FROM		Sailors AS S, Reserves AS R, Boats AS B
+WHERE		S.sid = R.sid AND R.bid = B.bid AND B.color = 'red'
 EXCEPT
-SELECT 	S2.sid
-FROM 	Sailors AS S2, Reserves AS R2, Boats AS B2
-WHERE 	S2.sid = R2.sid AND R2.bid = B2.bid AND B2.color = 'green' ;
+SELECT 		S2.sid
+FROM		Sailors AS S2, Reserves AS R2, Boats AS B2
+WHERE		S2.sid = R2.sid AND R2.bid = B2.bid AND B2.color = 'green' ;
 
-SELECT 	S.sname
-FROM 	Sailors AS S
-WHERE 	S.sid IN ( SELECT R.sid
- 					FROM 	Reserves AS R
- 					WHERE 	R.bid = 103) ;
+SELECT		S.sname
+FROM		Sailors As S
+WHERE 		S.sid IN ( 	SELECT		R.sid 
+						FROM		Reserves AS R
+						WHERE		R.bid = 103 ) ;
 
-SELECT 	S.sname
-FROM 	Sailors AS S
-WHERE 	S.sid IN ( SELECT R.sid
- 					FROM 	Reserves AS R, Boats AS B
- 					WHERE R.bid = B.bid AND B.color = 'red'
- 					INTERSECT
- 					SELECT R2.sid
- 					FROM Reserves AS R2, Boats AS B2
- 					WHERE R2.bid  =  B2.bid AND B2.color  =  'green' ) ;
+SELECT		S.sname
+FROM		Sailors AS S
+WHERE 		S.sid IN (	SELECT		R.sid
+						FROM		Reserves AS R, Boats AS B
+						WHERE		R.bid - B.bid AND B.color = 'red'
+						INTERSECT
+						SELECT		R2.sid
+						FROM		Reserves AS R2, Boats AS B2
+						WHERE 		R2.bid = B2.bid AND B2.color = 'green' ) ;
 
-SELECT 	S.sname
-FROM 	Sailors AS S
-WHERE 	S.age > (SELECT MAX (S2.age)
-				FROM 	Sailors AS S2
-				WHERE 	R.sid  =  S2.sid AND R.rating =  10 ) ;
+SELECT		S.sname
+FROM		Sailors AS S
+WHERE		NOT EXISTS (	SELECT		B.bid
+							FROM		Boats AS B
+							WHERE		NOT EXISTS	(	SELECT		R.bid
+														FROM		Reserves AS R
+														WHERE		R.bid = B.bid AND R.sid = S.sid ) ) ;
 
-SELECT 		B.bid, Count (*) AS reservationcount
-FROM 		Boats AS B, Reserves AS R
-WHERE 		R.bid = B.bid AND B.color = 'red'
-GROUP BY 	B.bid ;
+SELECT		S.sname
+FROM		Sailors AS S
+WHERE		S.age > (	SELECT		MAX ( S2.age )
+						FROM		Sailors AS S2
+						WHERE 		S2.rating = 10 ) ;
 
-SELECT 		B.bid, Count (*) AS reservationcount
-FROM 		Boats AS B, Reserves AS R
-WHERE 		R.bid = B.bid AND B.color  =  'red'
-GROUP BY 	B.bid
+SELECT		B.bid, COUNT ( * ) AS reservationcount
+FROM		Boats AS B, Reserves AS R
+WHERE		R.bid = B.bid AND B.color = 'red'
+GROUP BY	B.bid ;
+
+SELECT		B.bid, COUNT ( * ) AS reservationcount
+FROM		Boats AS B, Reserves AS R
+WHERE		R.bid = B.bid AND B.color = 'red'
+GROUP BY	B.bid
 HAVING 		B.color = 'red' ;
 
-SELECT 		Sname
-FROM 		Sailors
-WHERE 		Sailors.sid IN (SELECT Reserves.sid, Reserves.bid
- 							FROM Reserves
- 							CONTAINS
- 							SELECT Boats.bid
- 							FROM Boats
- 							WHERE Boats.bname  =  'interlake' ) ;
+SELECT		Sname
+FROM		Sailors
+WHERE		Sailors.sid IN (	SELECT		Reserves.sid, Reserves.bid
+								FROM		Reserves
+								CONTAINS	SELECT		Boats.bid
+											FROM		Boats
+											WHERE		bname = 'interlake' ) ;
 
-SELECT 		S.rating, Avg (S.age) As average
-FROM 		Sailors AS S
-WHERE 		S.age > 18
-GROUP BY 	S.rating
-HAVING 		Count (*) > 1 ;
+SELECT		S.rating, AVG ( S.age ) AS average
+FROM		Sailors AS S
+WHERE		S.age > 18
+GROUP BY	S.rating
+HAVING		COUNT ( * ) > 1 ;

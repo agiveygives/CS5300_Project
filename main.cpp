@@ -18,6 +18,7 @@ string prevToken = token;
 string attributeType = "";
 string relationalAlgebra = "";
 string queryTree = "";
+string optimizedTree = "";
 
 int queryNum = 1;
 bool failure = false;

@@ -175,5 +175,14 @@ void getRelationalAlgebra();
  *	reading all the vectors into their respective function calls and drawing proper lines
  */
 void buildQueryTree();
+/*	Constructs an optimized query tree that will be printed to the console by
+ *	reading all the vectors into their respective function calls associated with
+ *	the correct table and drawing proper lines
+ */
+void optimizedQueryTree();
+ 
+/*	Used by optimizedQueryTree() to get all the attributes of a table that a query needs
+ */
+void getAttributes(vector<string> queryTokens, vector<string> &tableProject, string currentTable);
 
 #endif
