@@ -454,7 +454,15 @@ void optimizedQueryTree(){
         else
           optimizedTree += ")";
       }
-    }      
+    } else {
+      optimizedTree += "PROJECT(";
+      for(int j = 0; j < project.size(); j++){
+        optimizedTree +=  project[j];
+        if(i+1 < project.size())
+          optimizedTree +=  " ";
+      }
+      optimizedTree +=  ")\n\n";
+    }    
   }
 
   tableToken = prevTableToken;
