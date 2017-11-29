@@ -23,6 +23,9 @@ extern statement currentStatement;	// stores current statement enum for building
 extern int queryNum;				// stores query number to show the user which query failed/succeeded
 extern bool failure;				// stores whether or not the query failed 
 									// 		(prevents relational algebra from being generated after failure)
+extern bool secondary;						// true if parser encounters UNION, INTERSECT, or EXCEPT
+									// Used to flip tree to make Union, etc. more readable
+
 extern locale loc;
 
 extern schemaLL *schema;				// Linked list of schema

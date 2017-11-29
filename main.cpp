@@ -22,6 +22,7 @@ string optimizedTree = "";
 
 int queryNum = 1;
 bool failure = false;
+bool secondary = false;
 
 locale loc;
 statement currentStatement = NONE;

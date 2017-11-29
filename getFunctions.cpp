@@ -176,9 +176,9 @@ void success() {
   queryNum++;
 
   buildRelationalAlgebra();
-  cout << relationalAlgebra << endl;
-  cout << endl << queryTree << endl << endl;
-  cout << endl << optimizedTree << endl << endl;
+  cout << "Relational Algebra:\n\n" << relationalAlgebra << endl;
+  cout << endl << "Query Tree:\n\n" << queryTree << endl << endl;
+  cout << endl << "Optimized Query Tree:\n\n" << optimizedTree << endl << endl;
 
   // reset vectors and strings
   select.clear();
@@ -246,8 +246,11 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+
+    secondary = true;
     relationalAlgebra += "UNION";
     queryTree += "\n\t\t^\n\t\t|\n\t\tUNION\n\t\t|\n\t\tv\n";
+    optimizedTree += "\n\t\t^\n\t\t|\n\t\tUNION\n\t\t|\n\t\tv\n";
 
     currentStatement = UNION;
   }
@@ -258,8 +261,11 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+
+    secondary = true;
     relationalAlgebra += "INTERSECT";
     queryTree += "\n\t\t^\n\t\t|\n\t\tINTERSECT\n\t\t|\n\t\tv\n";
+    optimizedTree += "\n\t\t^\n\t\t|\n\t\tINTERSECT\n\t\t|\n\t\tv\n";
 
     currentStatement = INTERSECT;
   }
@@ -270,14 +276,24 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+
+    secondary = true;
     relationalAlgebra += " - ";
     queryTree += "\n\t\t^\n\t\t|\n\t\tDIFFERENCE\n\t\t|\n\t\tv\n";
+    optimizedTree += "\n\t\t^\n\t\t|\n\t\tDIFFERENCE\n\t\t|\n\t\tv\n";
 
     currentStatement = EXCEPT;
   }
+  else if(token == "NOT"){
+    start = false;
+    currentStatement = IN_NOT;
+  }
   else if(token == "IN" || token == "EXISTS"){
     start = false;
-    select.push_back("=");
+    if(currentStatement == IN_NOT)
+      select.push_back("!=");
+    else
+      select.push_back("=");
     currentStatement = IN_EXISTS;
   }
 
@@ -374,32 +390,61 @@ void buildRelationalAlgebra(){
 void buildQueryTree(){
   int i = 0;
 
-  if(cartesianProduct.size() >= 1){
-    queryTree += cartesianProduct[0];
-    queryTree += "\n  |\n  |\n  V\n";
-    for( i = 1; i < cartesianProduct.size(); i++){
-      queryTree += "  X <------" + cartesianProduct[i];
+  if(!secondary){
+    if(cartesianProduct.size() >= 1){
+      queryTree += cartesianProduct[0];
       queryTree += "\n  |\n  |\n  V\n";
+      for( i = 1; i < cartesianProduct.size(); i++){
+        queryTree += "  X <------" + cartesianProduct[i];
+        queryTree += "\n  |\n  |\n  V\n";
+      }
+    } 
+
+    queryTree += "SELECT(";
+    for(i = 0; i < select.size(); i++){
+      queryTree +=  select[i];
+      if(i+1 < select.size())
+        queryTree +=  " ";
     }
-  } 
+    queryTree +=  ")\n  |\n  |\n  V\n";
 
-  queryTree += "SELECT(";
-  for(i = 0; i < select.size(); i++){
-    queryTree +=  select[i];
-    if(i+1 < select.size())
-      queryTree +=  " ";
+    queryTree += "PROJECT(";
+    for(i = 0; i < project.size(); i++){
+      queryTree +=  project[i];
+      if(i+1 < project.size())
+        queryTree +=  " ";
+    }
+    queryTree +=  ")\n\n";
+
+    optimizedQueryTree();
   }
-  queryTree +=  ")\n  |\n  |\n  V\n";
+  else {
+    queryTree += "PROJECT(";
+    for(i = 0; i < project.size(); i++){
+      queryTree +=  project[i];
+      if(i+1 < project.size())
+        queryTree +=  " ";
+    }
+    queryTree +=  ")\n  ^\n  |\n  |\n";
 
-  queryTree += "PROJECT(";
-  for(i = 0; i < project.size(); i++){
-    queryTree +=  project[i];
-    if(i+1 < project.size())
-      queryTree +=  " ";
+    queryTree += "SELECT(";
+    for(i = 0; i < select.size(); i++){
+      queryTree +=  select[i];
+      if(i+1 < select.size())
+        queryTree +=  " ";
+    }
+    queryTree +=  ")\n  ^\n  |\n  |\n";
+
+    if(cartesianProduct.size() >= 1){
+      for( i = cartesianProduct.size() - 1; i > 0; i--){
+        queryTree += "  X <------" + cartesianProduct[i] + "\n  ^\n  |\n  |\n";
+      }
+      queryTree += cartesianProduct[0];
+    }
+
+    optimizedQueryTree(); 
+    secondary = false;
   }
-  queryTree +=  ")\n\n";
-
-  optimizedQueryTree();
 }
 
 /*  Constructs an optimized query tree that will be printed to the console by
@@ -414,55 +459,110 @@ void optimizedQueryTree(){
   int i = 0;
   int table = 0;
 
-  for(i = 0; i < cartesianProduct.size(); i++) {
-    tableProject.clear();
+  if(cartesianProduct.size() > 1){
+    if(!secondary){
+      for(i = 0; i < cartesianProduct.size(); i++) {
+        tableProject.clear();
 
-    cout << endl << cartesianProduct[i] << endl;
-    currentTable = cartesianProduct[i];
-    for (int k = 0; k < currentTable.length(); k++)
-      currentTable[k] = toupper(currentTable[k],loc);
+        //cout << endl << cartesianProduct[i] << endl;
+        currentTable = cartesianProduct[i];
+        for (int k = 0; k < currentTable.length(); k++)
+          currentTable[k] = toupper(currentTable[k],loc);
 
-    getAttributes(select, tableProject, currentTable);
-    getAttributes(project, tableProject, currentTable);
+        getAttributes(select, tableProject, currentTable);
+        getAttributes(project, tableProject, currentTable);
 
-    if(i == 0){
-      optimizedTree += "      " + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
-    } else {
-      optimizedTree += "<---";
-    }
+        if(i == 0){
+          optimizedTree += "      " + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
+        } else {
+          optimizedTree += "<---";
+        }
 
-    optimizedTree += "PROJECT(";
-    for(int j = 0; j < tableProject.size(); j++){
-      if(j+1 != tableProject.size())
-        optimizedTree += tableProject[j] + ", ";
-      else
-        optimizedTree += tableProject[j] + ")";
-    }
+        optimizedTree += "PROJECT(";
+        for(int j = 0; j < tableProject.size(); j++){
+          if(j+1 != tableProject.size())
+            optimizedTree += tableProject[j] + ", ";
+          else
+            optimizedTree += tableProject[j] + ")";
+        }
 
-    if(i == 0){
-      optimizedTree += "\n\t|\n\t|\n\tV\n";
-    } else {
-      optimizedTree += "<---" + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
-    }
-      
-    if(i + 1 != cartesianProduct.size()){
-      optimizedTree += "JOIN(";
-      for(int j = 0; j < select.size(); j++){
-        optimizedTree +=  select[j];
-        if(j+1 < select.size())
-          optimizedTree +=  " ";
-        else
-          optimizedTree += ")";
+        if(i == 0){
+          optimizedTree += "\n\t|\n\t|\n\tV\n";
+        } else {
+          optimizedTree += "<---" + cartesianProduct[i] + "\n\t|\n\t|\n\tV\n";
+        }
+          
+        if(i + 1 != cartesianProduct.size()){
+          optimizedTree += "JOIN(";
+          for(int j = 0; j < select.size(); j++){
+            if(j%3 == 0){
+              for(int k = 0; k <= i; k++){
+
+              }
+            }
+            optimizedTree +=  select[j];
+            if(j+1 < select.size())
+              optimizedTree +=  " ";
+            else
+              optimizedTree += ")";
+          }
+        } else {
+          optimizedTree += "PROJECT(";
+          for(int j = 0; j < project.size(); j++){
+            optimizedTree +=  project[j];
+            if(i+1 < project.size())
+              optimizedTree +=  " ";
+          }
+          optimizedTree +=  ")\n\n";
+        }    
       }
-    } else {
+    }
+    else {
       optimizedTree += "PROJECT(";
       for(int j = 0; j < project.size(); j++){
         optimizedTree +=  project[j];
         if(i+1 < project.size())
           optimizedTree +=  " ";
       }
-      optimizedTree +=  ")\n\n";
-    }    
+      optimizedTree +=  ")\n\t^\n\t|\n\t|\n";
+
+      for(i = cartesianProduct.size() - 1; i > 0; i--){
+        tableProject.clear();
+
+        //cout << endl << cartesianProduct[i] << endl;
+        currentTable = cartesianProduct[i];
+        for (int k = 0; k < currentTable.length(); k++)
+          currentTable[k] = toupper(currentTable[k],loc);
+
+        getAttributes(select, tableProject, currentTable);
+        getAttributes(project, tableProject, currentTable);
+
+        optimizedTree += "JOIN(";
+        for(int j = 0; j < select.size(); j++){
+          if(j%3 == 0){
+            for(int k = 0; k <= i; k++){
+
+            }
+          }
+          optimizedTree +=  select[j];
+          if(j+1 < select.size())
+            optimizedTree +=  " ";
+          else {
+            optimizedTree += ")<---PROJECT(";
+            for(int j = 0; j < tableProject.size(); j++){
+              if(j+1 != tableProject.size())
+                optimizedTree += tableProject[j] + ", ";
+              else
+                optimizedTree += tableProject[j] + ")" + "<---" + cartesianProduct[i] + "\n\t^\n\t|\n\t|\n";
+            }
+          }
+        }
+      }
+      optimizedTree += "      " + cartesianProduct[i];
+    }
+  }
+  else {
+    optimizedTree = queryTree;
   }
 
   tableToken = prevTableToken;
@@ -492,11 +592,11 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
       if(currentTable != tempUpper){
         token = temp;
         if(checkAlias() && currentTable == tableToken){
-          cout << '\t' << attribute << endl;
+          //cout << '\t' << attribute << endl;
           tableProject.push_back(attribute);
         }
       } else {
-        cout << '\t' << attribute << endl;
+        //cout << '\t' << attribute << endl;
         tableProject.push_back(attribute);
       }
     } else {
@@ -507,7 +607,7 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
       tableToken = currentTable;
 
       if(isAttribute()){
-        cout << '\t' << temp << endl;
+        //cout << '\t' << temp << endl;
         tableProject.push_back(temp);
       }
     }
