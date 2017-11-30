@@ -185,4 +185,8 @@ void optimizedQueryTree();
  */
 void getAttributes(vector<string> queryTokens, vector<string> &tableProject, string currentTable);
 
+string toCaps(string capitalize);
+
+bool checkAttribute(string check, string table);
+
 #endif

@@ -3,7 +3,7 @@
  *  File: getFunctions.cpp
  *  Includes:
  *    getSchema()     Success()                     buildQueryTree()
- *    getToken()      checkEnd()
+ *    getToken()      checkEnd()                    optimizeQueryTree()
  *    setAlias()      getRelationalAlgebra()
  *    fail()          buildRelationalAlgebra()
  */
@@ -174,12 +174,13 @@ void success() {
     fail(error);
   }
   cout << "\nQuery " << queryNum << " was successful\n";
-  queryNum++;
 
   buildRelationalAlgebra();
   cout << "Relational Algebra:\n\n" << relationalAlgebra << endl;
   cout << endl << "Query Tree:\n\n" << queryTree << endl << endl;
   cout << endl << "Optimized Query Tree:\n\n" << optimizedTree << endl << endl;
+
+  queryNum++;
 
   // reset vectors and strings
   select.clear();
@@ -302,7 +303,7 @@ void getRelationalAlgebra(){
     start = false;
     currentStatement = IN_NOT;
   }
-  else if(token == "IN" || token == "EXISTS"){
+  else if(token == "IN" /*|| token == "EXISTS"*/){
     start = false;
     if(currentStatement == IN_NOT)
       select.push_back("!=");
@@ -522,6 +523,10 @@ void optimizedQueryTree(){
   string currentTable = "";
   int i = 0;
   bool validAttribute = false;
+  string leftSide = "";
+  string rightSide = "";
+  string compareSign = "";
+  bool compare = false;
 
   if(cartesianProduct.size() > 1){
 
@@ -530,7 +535,6 @@ void optimizedQueryTree(){
       for(i = 0; i < cartesianProduct.size(); i++) {
         tableProject.clear();
 
-        //cout << endl << cartesianProduct[i] << endl;
         currentTable = cartesianProduct[i];
         for (int k = 0; k < currentTable.length(); k++)
           currentTable[k] = toupper(currentTable[k],loc);
@@ -562,15 +566,39 @@ void optimizedQueryTree(){
         if(i + 1 != cartesianProduct.size()){
           optimizedTree += "JOIN(";
           for(int j = 0; j < select.size(); j++){
-
-
-            optimizedTree +=  select[j];
-            if(j+1 < select.size())
-              optimizedTree +=  " ";
-            else
-              optimizedTree += ")";
+            if(select[j] == "=" || select[j] == ">" || select[j] == "<"){
+              compare = true;
+              compareSign = select[j];
+            }
+            else if(select[j] == "AND" || select[j] == "OR")
+              compare = false;
+            else if(!compare)
+              leftSide = select[j];
+            else if(compare){
+              rightSide = select[j];
+              token = rightSide;
+              if((leftSide[0] == cartesianProduct[i][0] || leftSide[0] == cartesianProduct[i+1][0]) &&
+                  (rightSide[0] == cartesianProduct[i][0] || rightSide[0] == cartesianProduct[i+1][0] || isString() || isInteger())){
+                optimizedTree += " " + leftSide + " " + compareSign + " " + rightSide + " ";
+                if(j+1 < select.size())
+                  optimizedTree += select[j+1];
+              }
+            }
           }
+
+          optimizedTree += ")";
         } else {
+
+          if(groupBy.size() > 0){
+            optimizedTree += "GROUP BY(";
+            for(i=0; i < groupBy.size(); i++){
+              optimizedTree += groupBy[i];
+              if(i+1 < groupBy.size())
+                optimizedTree += " ";
+            }
+            optimizedTree +=  ")\n  |\n  |\n  V\n";
+          }
+
           optimizedTree += "PROJECT(";
           for(int j = 0; j < project.size(); j++){
             optimizedTree +=  project[j];
@@ -578,7 +606,7 @@ void optimizedQueryTree(){
               optimizedTree +=  " ";
           }
           optimizedTree +=  ")\n\n";
-        }    
+        }
       }
     }
 
@@ -592,10 +620,19 @@ void optimizedQueryTree(){
       }
       optimizedTree +=  ")\n\t^\n\t|\n\t|\n";
 
+      if(groupBy.size() > 0){
+        optimizedTree += "GROUP BY(";
+        for(i=0; i < groupBy.size(); i++){
+          optimizedTree += groupBy[i];
+          if(i+1 < groupBy.size())
+            optimizedTree += " ";
+        }
+        optimizedTree +=  ")\n  ^\n  |\n  |\n";
+      }
+
       for(i = cartesianProduct.size() - 1; i > 0; i--){
         tableProject.clear();
 
-        //cout << endl << cartesianProduct[i] << endl;
         currentTable = cartesianProduct[i];
         for (int k = 0; k < currentTable.length(); k++)
           currentTable[k] = toupper(currentTable[k],loc);
@@ -605,48 +642,136 @@ void optimizedQueryTree(){
 
         optimizedTree += "JOIN(";
         for(int j = 0; j < select.size(); j++){
-          /*for(int k = 0; k < usedAttributes.size(); k++){
-            if(select[j] == usedAttributes[k]){
-              validAttribute = true;
-              break;
-            } else {
-              validAttribute = false;
+          if(select[j] == "=" || select[j] == ">" || select[j] == "<"){
+            compare = true;
+            compareSign = select[j];
+          }
+          else if(select[j] == "AND" || select[j] == "OR")
+            compare = false;
+          else if(!compare)
+            leftSide = select[j];
+          else if(compare){
+            rightSide = select[j];
+            token = rightSide;
+            //cout << endl << "LEFTSIDE: " << leftSide << "\tRIGHTSIDE: " << rightSide << endl;
+            if((leftSide[0] == cartesianProduct[i][0] || leftSide[0] == cartesianProduct[i-1][0]) &&
+                (rightSide[0] == cartesianProduct[i][0] || rightSide[0] == cartesianProduct[i-1][0] || isString() || isInteger())){
+              optimizedTree += " " + leftSide + " " + compareSign + " " + rightSide + " ";
+              if(j+1 < select.size())
+                optimizedTree += select[j+1];
+              compare = false;
             }
           }
-          if(validAttribute && select[j + 1] == "="){
-            for(int k = 0; k < usedAttributes.size(); k++){
-              if(select[j+2] == usedAttributes[k]){
-                validAttribute = true;
-                break;
-              } else {
-                validAttribute = false;
-              }
-            }
-          }*/
-          
-          //if(validAttribute){
-            optimizedTree +=  select[j];
-            if(j+1 < select.size())
-              optimizedTree +=  " ";
-            else {
-              optimizedTree += ")<---PROJECT(";
-              for(int j = 0; j < tableProject.size(); j++){
-                if(j+1 != tableProject.size())
-                  optimizedTree += tableProject[j] + ", ";
-                else
-                  optimizedTree += tableProject[j] + ")" + "<---" + cartesianProduct[i] + "\n\t^\n\t|\n\t|\n";
-              }
-            }
-          /*} else if(select[j+1] == "="){
-            j = j+2;
-          }*/
+        }
+
+        optimizedTree += ")<---PROJECT(";
+        for(int j = 0; j < tableProject.size(); j++){
+          if(j+1 != tableProject.size())
+            optimizedTree += tableProject[j] + ", ";
+          else
+            optimizedTree += tableProject[j] + ")" + "<---" + cartesianProduct[i] + "\n\t^\n\t|\n\t|\n";
         }
       }
       optimizedTree += "      " + cartesianProduct[i];
     }
   }
   else {
-    optimizedTree = queryTree;
+    //optimizedTree = queryTree;
+    if(!secondary){
+      optimizedTree = cartesianProduct[0] + "\n  |\n  |\n  V\n";
+      tableProject.clear();
+
+      currentTable = cartesianProduct[0];
+      for (int k = 0; k < currentTable.length(); k++)
+        currentTable[k] = toupper(currentTable[k],loc);
+
+      getAttributes(select, tableProject, currentTable);
+      getAttributes(project, tableProject, currentTable);
+
+      optimizedTree += "PROJECT(";
+      for(int j = 0; j < tableProject.size(); j++){
+        //usedAttributes.push_back(tableProject[j]);
+        if(j+1 != tableProject.size())
+          optimizedTree += tableProject[j] + ", ";
+        else
+          optimizedTree += tableProject[j] + ")\n  |\n  |\n  V\n";
+      }
+
+      if(groupBy.size() > 0){
+        optimizedTree += "GROUP BY(";
+        for(i=0; i < groupBy.size(); i++){
+          optimizedTree += groupBy[i];
+          if(i+1 < groupBy.size())
+            optimizedTree += " ";
+        }
+        optimizedTree +=  ")\n  |\n  |\n  V\n";
+      }
+
+      optimizedTree += "SELECT(";
+      for(i = 0; i < select.size(); i++){
+        optimizedTree +=  select[i];
+        if(i+1 < select.size())
+          optimizedTree +=  " ";
+      }
+      optimizedTree +=  ")\n  |\n  |\n  V\n";
+
+      optimizedTree += "PROJECT(";
+      for(i = 0; i < project.size(); i++){
+        optimizedTree +=  project[i];
+        if(i+1 < project.size())
+          optimizedTree +=  " ";
+      }
+      optimizedTree +=  ")\n\n";
+
+    }
+    else {
+      optimizedTree += "PROJECT(";
+      for(int j = 0; j < project.size(); j++){
+        optimizedTree +=  project[j];
+        if(i+1 < project.size())
+          optimizedTree +=  " ";
+      }
+      optimizedTree +=  ")\n\t^\n\t|\n\t|\n";
+
+      optimizedTree += "SELECT(";
+      for(i = 0; i < select.size(); i++){
+        optimizedTree +=  select[i];
+        if(i+1 < select.size())
+          optimizedTree +=  " ";
+      }
+      optimizedTree +=  ")\n  ^\n  |\n  |\n";
+
+      if(groupBy.size() > 0){
+        optimizedTree += "GROUP BY(";
+        for(i=0; i < groupBy.size(); i++){
+          optimizedTree += groupBy[i];
+          if(i+1 < groupBy.size())
+            optimizedTree += " ";
+        }
+        optimizedTree +=  ")\n  ^\n  |\n  |\n";
+      }
+
+      tableProject.clear();
+
+      currentTable = cartesianProduct[0];
+      for (int k = 0; k < currentTable.length(); k++)
+        currentTable[k] = toupper(currentTable[k],loc);
+
+      getAttributes(select, tableProject, currentTable);
+      getAttributes(project, tableProject, currentTable);
+
+      optimizedTree += "PROJECT(";
+      for(int j = 0; j < tableProject.size(); j++){
+        //usedAttributes.push_back(tableProject[j]);
+        if(j+1 != tableProject.size())
+          optimizedTree += tableProject[j] + ", ";
+        else
+          optimizedTree += tableProject[j] + ")\n  ^\n  |\n  |\n";
+      }
+
+      optimizedTree += "      " + cartesianProduct[i];
+    }
+
   }
 
   tableToken = prevTableToken;
@@ -676,11 +801,9 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
       if(currentTable != tempUpper){
         token = temp;
         if(checkAlias() && currentTable == tableToken){
-          //cout << '\t' << attribute << endl;
           tableProject.push_back(queryTokens[j]);
         }
       } else {
-        //cout << '\t' << attribute << endl;
         tableProject.push_back(queryTokens[j]);
       }
     } else {
@@ -691,9 +814,34 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
       tableToken = currentTable;
 
       if(isAttribute()){
-        //cout << '\t' << temp << endl;
         tableProject.push_back(queryTokens[j]);
       }
     }
   }
+}
+
+string toCaps(string capitalize){
+  for (int k = 0; k < capitalize.length(); k++)
+    capitalize[k] = toupper(capitalize[k],loc);
+
+  return capitalize;
+}
+
+bool checkAttribute(string check, string table){
+  check = toCaps(check);
+  string aliasToken = check;
+
+  if(check.find(".") < check.length()){
+    aliasToken.erase(aliasToken.find("."), strlen(aliasToken.c_str()));   // get table associated with attribute
+    check.erase(0, token.find(".") + 1);                                  // get attribute
+
+    token = aliasToken;
+    if(isTable() || checkAlias()) {
+      token = check;
+      if(isAttribute() || isString() || isInteger()){
+        return true;
+      }
+    }
+    return false;
+  } else return true;
 }

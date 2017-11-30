@@ -89,7 +89,7 @@ WHERE		Sailors.sid IN (	SELECT		Reserves.sid, Reserves.bid
 								FROM		Reserves
 								CONTAINS	SELECT		Boats.bid
 											FROM		Boats
-											WHERE		bname = 'interlake' ) ;
+											WHERE		Boats.bname = 'interlake' ) ;
 
 SELECT		S.rating, AVG ( S.age ) AS average
 FROM		Sailors AS S
