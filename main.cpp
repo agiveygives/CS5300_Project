@@ -32,6 +32,7 @@ vector<string> potentialAlias;
 vector<string> select;
 vector<string> project;
 vector<string> cartesianProduct;
+vector<string> groupBy;
 
 int main() {
   getSchema();

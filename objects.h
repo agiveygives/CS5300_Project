@@ -50,6 +50,8 @@ enum statement {
   UNION,
   INTERSECT,
   EXCEPT,
+  GROUP,
+  GROUP_BY,
   IN_NOT,
   IN_EXISTS
 };

@@ -33,5 +33,6 @@ extern vector<string> potentialAlias;	// stores all potential aliases from the S
 extern vector<string> select;			// stores relational algebra tokens for select operation
 extern vector<string> project;			// stores relational algebra tokens for project operation
 extern vector<string> cartesianProduct;	// stores relational algebra tokens for cartesian product
+extern vector<string> groupBy;			// stores relational algebra tokens for group by
 
 #endif

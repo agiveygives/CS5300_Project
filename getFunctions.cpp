@@ -138,6 +138,7 @@ void fail(string error) {
   select.clear();
   project.clear();
   cartesianProduct.clear();
+  groupBy.clear();
   relationalAlgebra = "";
   queryTree = "";
   queryNum++;
@@ -184,6 +185,7 @@ void success() {
   select.clear();
   project.clear();
   cartesianProduct.clear();
+  groupBy.clear();
   relationalAlgebra = "";
   queryTree = "";
   optimizedTree = "";
@@ -220,6 +222,7 @@ void checkEnd() {
  *    buildRelationalAlgebra and clear vectors
  */
 void getRelationalAlgebra(){
+  bool hasComma = false;
   bool start = true;
   bool open = true;
 
@@ -237,7 +240,15 @@ void getRelationalAlgebra(){
   }
   else if(token == "GROUP"){
     start = false;
-    currentStatement = NONE;
+    currentStatement = GROUP;
+  }
+  else if(token == "BY" && currentStatement == GROUP){
+    start = false;
+    currentStatement = GROUP_BY;
+  }
+  else if(token == "HAVING"){
+    start = false;
+    currentStatement = HAVING;
   }
   else if(token == "UNION"){
     start = false;
@@ -246,6 +257,7 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+    groupBy.clear();
 
     secondary = true;
     relationalAlgebra += "UNION";
@@ -261,6 +273,7 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+    groupBy.clear();
 
     secondary = true;
     relationalAlgebra += "INTERSECT";
@@ -276,6 +289,7 @@ void getRelationalAlgebra(){
     select.clear();
     project.clear();
     cartesianProduct.clear();
+    groupBy.clear();
 
     secondary = true;
     relationalAlgebra += " - ";
@@ -320,16 +334,28 @@ void getRelationalAlgebra(){
           }
         }
         if(open){
+          if(token[strlen(token.c_str()) - 1] == ','){
+            hasComma = true;
+            token.erase(token.find(","), 1);
+          }
+          else
+            hasComma = false;
           string lower = token;
           for (int i = 0; i < token.length(); i++)
             token[i] = toupper(token[i],loc);
-          if(isTable())
+          if(isTable()){
             cartesianProduct.push_back(lower);
+          }
+          if(hasComma)
+            token += ",";
         }
         break;
 
       case WHERE:
         select.push_back(token);
+        break;
+      case GROUP_BY:
+        groupBy.push_back(token);
         break;
       case HAVING:
         select.push_back(token);
@@ -368,6 +394,17 @@ void buildRelationalAlgebra(){
   }
   relationalAlgebra +=  ")";
 
+  if(groupBy.size() > 0){
+    relationalAlgebra += "(GROUP BY(";
+    for(i = 0; i < groupBy.size(); i++){
+      relationalAlgebra += groupBy[i];
+      if(i + 1 < groupBy.size())
+        relationalAlgebra += " ";
+    }
+
+    relationalAlgebra += ")";
+  }
+
   
   for(i = 0; i < cartesianProduct.size(); i++){
     relationalAlgebra +=  "(";
@@ -380,6 +417,9 @@ void buildRelationalAlgebra(){
   }
 
   relationalAlgebra +=  "))";
+  if(groupBy.size() > 0){
+    relationalAlgebra += ")";
+  }
 
   buildQueryTree();
 }
@@ -390,6 +430,7 @@ void buildRelationalAlgebra(){
 void buildQueryTree(){
   int i = 0;
 
+  // First Tree
   if(!secondary){
     if(cartesianProduct.size() >= 1){
       queryTree += cartesianProduct[0];
@@ -399,6 +440,16 @@ void buildQueryTree(){
         queryTree += "\n  |\n  |\n  V\n";
       }
     } 
+
+    if(groupBy.size() > 0){
+      queryTree += "GROUP BY(";
+      for(i=0; i < groupBy.size(); i++){
+        queryTree += groupBy[i];
+        if(i+1 < groupBy.size())
+          queryTree += " ";
+      }
+      queryTree +=  ")\n  |\n  |\n  V\n";
+    }
 
     queryTree += "SELECT(";
     for(i = 0; i < select.size(); i++){
@@ -418,6 +469,8 @@ void buildQueryTree(){
 
     optimizedQueryTree();
   }
+
+  // Second Tree
   else {
     queryTree += "PROJECT(";
     for(i = 0; i < project.size(); i++){
@@ -434,6 +487,16 @@ void buildQueryTree(){
         queryTree +=  " ";
     }
     queryTree +=  ")\n  ^\n  |\n  |\n";
+
+    if(groupBy.size() > 0){
+      queryTree += "GROUP BY(";
+      for(i=0; i < groupBy.size(); i++){
+        queryTree += groupBy[i];
+        if(i+1 < groupBy.size())
+          queryTree += " ";
+      }
+      queryTree +=  ")\n  ^\n  |\n  |\n";
+    }
 
     if(cartesianProduct.size() >= 1){
       for( i = cartesianProduct.size() - 1; i > 0; i--){
@@ -453,13 +516,16 @@ void buildQueryTree(){
  */
 void optimizedQueryTree(){
   vector<string> tableProject;
+  vector<string> usedAttributes;
   string prevToken = token;
   string prevTableToken = tableToken;
   string currentTable = "";
   int i = 0;
-  int table = 0;
+  bool validAttribute = false;
 
   if(cartesianProduct.size() > 1){
+
+    // First Tree
     if(!secondary){
       for(i = 0; i < cartesianProduct.size(); i++) {
         tableProject.clear();
@@ -480,6 +546,7 @@ void optimizedQueryTree(){
 
         optimizedTree += "PROJECT(";
         for(int j = 0; j < tableProject.size(); j++){
+          usedAttributes.push_back(tableProject[j]);
           if(j+1 != tableProject.size())
             optimizedTree += tableProject[j] + ", ";
           else
@@ -495,11 +562,8 @@ void optimizedQueryTree(){
         if(i + 1 != cartesianProduct.size()){
           optimizedTree += "JOIN(";
           for(int j = 0; j < select.size(); j++){
-            if(j%3 == 0){
-              for(int k = 0; k <= i; k++){
 
-              }
-            }
+
             optimizedTree +=  select[j];
             if(j+1 < select.size())
               optimizedTree +=  " ";
@@ -517,6 +581,8 @@ void optimizedQueryTree(){
         }    
       }
     }
+
+    // Second Tree
     else {
       optimizedTree += "PROJECT(";
       for(int j = 0; j < project.size(); j++){
@@ -539,23 +605,41 @@ void optimizedQueryTree(){
 
         optimizedTree += "JOIN(";
         for(int j = 0; j < select.size(); j++){
-          if(j%3 == 0){
-            for(int k = 0; k <= i; k++){
-
+          /*for(int k = 0; k < usedAttributes.size(); k++){
+            if(select[j] == usedAttributes[k]){
+              validAttribute = true;
+              break;
+            } else {
+              validAttribute = false;
             }
           }
-          optimizedTree +=  select[j];
-          if(j+1 < select.size())
-            optimizedTree +=  " ";
-          else {
-            optimizedTree += ")<---PROJECT(";
-            for(int j = 0; j < tableProject.size(); j++){
-              if(j+1 != tableProject.size())
-                optimizedTree += tableProject[j] + ", ";
-              else
-                optimizedTree += tableProject[j] + ")" + "<---" + cartesianProduct[i] + "\n\t^\n\t|\n\t|\n";
+          if(validAttribute && select[j + 1] == "="){
+            for(int k = 0; k < usedAttributes.size(); k++){
+              if(select[j+2] == usedAttributes[k]){
+                validAttribute = true;
+                break;
+              } else {
+                validAttribute = false;
+              }
             }
-          }
+          }*/
+          
+          //if(validAttribute){
+            optimizedTree +=  select[j];
+            if(j+1 < select.size())
+              optimizedTree +=  " ";
+            else {
+              optimizedTree += ")<---PROJECT(";
+              for(int j = 0; j < tableProject.size(); j++){
+                if(j+1 != tableProject.size())
+                  optimizedTree += tableProject[j] + ", ";
+                else
+                  optimizedTree += tableProject[j] + ")" + "<---" + cartesianProduct[i] + "\n\t^\n\t|\n\t|\n";
+              }
+            }
+          /*} else if(select[j+1] == "="){
+            j = j+2;
+          }*/
         }
       }
       optimizedTree += "      " + cartesianProduct[i];
@@ -593,11 +677,11 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
         token = temp;
         if(checkAlias() && currentTable == tableToken){
           //cout << '\t' << attribute << endl;
-          tableProject.push_back(attribute);
+          tableProject.push_back(queryTokens[j]);
         }
       } else {
         //cout << '\t' << attribute << endl;
-        tableProject.push_back(attribute);
+        tableProject.push_back(queryTokens[j]);
       }
     } else {
       token = temp;
@@ -608,7 +692,7 @@ void getAttributes(vector<string> queryTokens, vector<string> &tableProject, str
 
       if(isAttribute()){
         //cout << '\t' << temp << endl;
-        tableProject.push_back(temp);
+        tableProject.push_back(queryTokens[j]);
       }
     }
   }

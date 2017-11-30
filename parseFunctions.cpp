@@ -253,10 +253,12 @@ void parse_SelectStatement(){
   if(token=="WHERE")
     parse_WhereStatement();
   if(token=="GROUP"){
-    currentStatement = NONE;
+    currentStatement = GROUP;
     getToken();
-    if(token=="BY")
+    if(token=="BY"){
+      currentStatement = GROUP_BY;
       parse_GroupByStatement();
+    }
     else
       fail("Error: SelectStatement: GROUP: expecting 'BY'");
   }  
@@ -379,20 +381,25 @@ void parse_InnerFrom(){
   if(isTable()){
     tableToken = token;
     string aliasTable = token;
-    getToken();   
-    if(token=="AS"){
-      getToken();
-      if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
-        token.erase(token.find(","), 1);
-        isComma = true;
-      }
-      if(isAlias()){
-        setAlias(aliasTable);
+
+    if(!isComma){
+      getToken();  
+
+      if(token=="AS"){
         getToken();
+
+        if(token[strlen(token.c_str())-1] == ',') {     // checks if there is a comma after the token
+          token.erase(token.find(","), 1);
+          isComma = true;
+        }
+        if(isAlias()){
+          setAlias(aliasTable);
+          if(!isComma)
+            getToken();
+        }
+        else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
       }
-      else fail("Error: FromStatement: InnerFrom: AS: expecting alias");
     }
-    else if(isAlias()) fail("Error: Found alias [ " + token + " ] after a table without AS statement");
   }
   else if(token[0]=='('){
 
@@ -423,6 +430,7 @@ void parse_InnerFrom(){
   } else if(!isTable()) fail("Error: InnerFrom: " + token + " is not a valid relation");
 
   if(isComma){
+    getToken();
     parse_InnerFrom();
   } else if(token == ",") {
     getToken();

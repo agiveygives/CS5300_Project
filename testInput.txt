@@ -52,7 +52,7 @@ SELECT		S.sname
 FROM		Sailors AS S
 WHERE 		S.sid IN (	SELECT		R.sid
 						FROM		Reserves AS R, Boats AS B
-						WHERE		R.bid - B.bid AND B.color = 'red'
+						WHERE		R.bid = B.bid AND B.color = 'red'
 						INTERSECT
 						SELECT		R2.sid
 						FROM		Reserves AS R2, Boats AS B2
